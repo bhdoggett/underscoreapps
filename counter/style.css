@@ -55,9 +55,9 @@ body {
   border: 1px solid var(--muted);
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 1.4rem;
   letter-spacing: 0.05em;
-  padding: 0.4rem 1rem;
+  padding: 0.7rem 2rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   line-height: 1;

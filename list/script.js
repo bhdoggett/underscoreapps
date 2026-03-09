@@ -1,61 +1,4 @@
-// =========================================================
-//  CONFIGURATION
-//  Change PASSWORD to your own password.
-//  NOTE: This password is visible in the page source — it
-//  is a simple deterrent, not real security. That's fine
-//  for personal use (user explicitly requested this).
-// =========================================================
-const PASSWORD    = 'password';
 const STORAGE_KEY = 'list_v1_items';
-const AUTH_KEY    = 'list_v1_auth';
-
-// =========================================================
-//  AUTH
-// =========================================================
-const lockScreen    = document.getElementById('lock-screen');
-const appEl         = document.getElementById('app');
-const passwordInput = document.getElementById('password-input');
-const lockError     = document.getElementById('lock-error');
-
-function isAuthed() {
-  return sessionStorage.getItem(AUTH_KEY) === '1';
-}
-
-function tryAuth(pw) {
-  if (pw === PASSWORD) {
-    sessionStorage.setItem(AUTH_KEY, '1');
-    return true;
-  }
-  return false;
-}
-
-function unlockApp() {
-  lockScreen.classList.add('fade-out');
-  setTimeout(() => {
-    lockScreen.classList.add('hidden');
-    appEl.classList.remove('hidden');
-    document.getElementById('add-input').focus();
-    loadItems();
-    renderMeta();
-  }, 400);
-}
-
-passwordInput.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  if (tryAuth(passwordInput.value.trim())) {
-    unlockApp();
-  } else {
-    lockError.classList.add('visible');
-    passwordInput.value = '';
-    setTimeout(() => lockError.classList.remove('visible'), 2000);
-  }
-});
-
-// Auto-unlock if already authenticated this session
-if (isAuthed()) {
-  lockScreen.classList.add('hidden');
-  appEl.classList.remove('hidden');
-}
 
 // =========================================================
 //  DATA
@@ -217,15 +160,7 @@ function completeItem(id, el) {
 //  META (date + count)
 // =========================================================
 function renderMeta() {
-  const dateEl  = document.getElementById('date-display');
   const countEl = document.getElementById('count-display');
-
-  const now = new Date();
-  dateEl.textContent = now.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month:   'long',
-    day:     'numeric',
-  });
 
   const n = items.length;
   countEl.textContent = n === 0
@@ -245,8 +180,5 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   input.focus();
 });
 
-// Initialize meta on load if already authed
-if (isAuthed()) {
-  loadItems();
-  renderMeta();
-}
+loadItems();
+renderMeta();

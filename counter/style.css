@@ -1,0 +1,94 @@
+@import '../shared.css';
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.counter-wrap {
+  text-align: center;
+  width: min(400px, 90vw);
+}
+
+.app-title {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 12vw, 6rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  margin-bottom: 0;
+}
+
+.counter-rule {
+  height: 1px;
+  background: var(--rule);
+  margin: 1.1rem 0 2.5rem;
+}
+
+.count-display {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 14vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 2.5rem;
+  user-select: none;
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.btn-row-clear {
+  display: flex;
+  justify-content: center;
+}
+
+.counter-btn {
+  background: none;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.counter-btn:hover,
+.counter-btn:focus-visible {
+  border-color: var(--fg);
+  color: var(--bg);
+  background: var(--fg);
+}
+
+.counter-btn.clear {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.85rem;
+}
+
+.back-link {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.back-link:hover {
+  color: var(--fg);
+}

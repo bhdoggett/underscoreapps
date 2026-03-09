@@ -1,138 +1,18 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import '../shared.css';
 
-:root {
-  --bg: #0a0a0a;
-  --fg: #efefef;
-  --muted: #505050;
-  --dim: #1e1e1e;
-  --rule: #2a2a2a;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-mono: 'Courier Prime', 'Courier New', monospace;
-}
-
-html {
-  height: 100%;
-}
-
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-mono);
-  min-height: 100%;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ======================================================
-   LOCK SCREEN
-====================================================== */
-
-#lock-screen {
+.back-link {
   position: fixed;
-  inset: 0;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  transition: opacity 0.4s ease;
-}
-
-#lock-screen.fade-out {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#lock-screen.hidden {
-  display: none;
-}
-
-.lock-inner {
-  text-align: center;
-  width: min(320px, 90vw);
-}
-
-.lock-title {
-  font-family: var(--font-display);
-  font-size: clamp(4rem, 15vw, 5.5rem);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.4rem;
-}
-
-
-.lock-hint {
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 2.5rem;
-}
-
-.lock-field {
-  position: relative;
-  margin-bottom: 1.2rem;
-}
-
-.lock-field::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--rule);
-  transition: background 0.2s;
-}
-
-.lock-field:focus-within::after {
-  background: var(--fg);
-}
-
-#password-input {
-  width: 100%;
-  background: none;
-  border: none;
-  outline: none;
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  letter-spacing: 0.4em;
-  text-align: center;
-  padding: 0.5rem 0 0.6rem;
-  caret-color: var(--fg);
-}
-
-#password-input::placeholder {
-  color: var(--muted);
-  letter-spacing: 0.2em;
-  font-size: 0.85rem;
-}
-
-.lock-enter {
+  top: 1.5rem;
+  left: 1.5rem;
   font-size: 0.65rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 1.2rem;
+  text-decoration: none;
+  transition: color 0.15s;
 }
 
-.lock-error {
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--muted);
-  opacity: 0;
-  transition: opacity 0.2s;
-  height: 1rem;
-}
-
-.lock-error.visible {
-  opacity: 1;
+.back-link:hover {
   color: var(--fg);
 }
 
@@ -143,12 +23,8 @@ body {
 #app {
   max-width: 620px;
   margin: 0 auto;
-  padding: 3.5rem 2rem 9rem;
+  padding: 3.5rem 2rem 4rem;
   min-height: 100vh;
-}
-
-#app.hidden {
-  display: none;
 }
 
 /* ---- Header ---- */
@@ -156,11 +32,12 @@ body {
 .app-header {
   margin-bottom: 2.5rem;
   user-select: none;
+  text-align: center;
 }
 
 .app-title {
   font-family: var(--font-display);
-  font-size: clamp(6rem, 22vw, 10rem);
+  font-size: clamp(3.5rem, 12vw, 6rem);
   font-weight: 900;
   line-height: 0.88;
   letter-spacing: -0.03em;
@@ -334,21 +211,14 @@ body {
   display: block;
 }
 
-/* ---- Add form (fixed bottom) ---- */
+/* ---- Add form ---- */
 
 .add-form {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--bg);
   border-top: 1px solid var(--rule);
-  padding: 1.2rem 2rem 1.4rem;
+  padding: 0.95rem 0;
 }
 
 .add-form-inner {
-  max-width: 620px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 1.2rem;
@@ -401,15 +271,3 @@ body {
   background: var(--fg);
 }
 
-/* ---- Scrollbar ---- */
-
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--dim); }
-
-/* ---- Selection ---- */
-
-::selection {
-  background: var(--fg);
-  color: var(--bg);
-}

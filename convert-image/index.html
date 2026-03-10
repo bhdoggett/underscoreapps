@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CONVERT IMAGE</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="back-link" href="/">← back</a>
+
+    <div id="app">
+      <header class="app-header">
+        <h1 class="app-title">Convert Image</h1>
+        <div class="header-rule"></div>
+      </header>
+
+      <div id="drop-zone">
+        <input type="file" id="file-input" accept="image/*" hidden />
+        <div id="drop-inner">
+          <p class="drop-label">drop image here</p>
+          <p class="drop-or">or</p>
+          <button class="action-btn" id="browse-btn">choose file</button>
+        </div>
+      </div>
+
+      <div id="preview-section" class="hidden">
+        <div id="preview-wrap">
+          <img id="preview" alt="preview" />
+        </div>
+        <div class="file-meta">
+          <p id="file-info"></p>
+          <button class="action-btn muted" id="reset-btn">clear</button>
+        </div>
+        <div class="convert-row">
+          <button class="convert-btn" data-format="png">png</button>
+          <button class="convert-btn" data-format="jpeg">jpg</button>
+          <button class="convert-btn" data-format="webp">webp</button>
+        </div>
+        <p id="error-msg" class="hidden"></p>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

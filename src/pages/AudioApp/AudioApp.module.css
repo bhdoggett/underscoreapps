@@ -32,7 +32,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.8rem;
-  margin-bottom: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
 .transformBtn {
@@ -62,13 +63,6 @@
 .transformBtn:disabled {
   opacity: 0.3;
   cursor: wait;
-}
-
-.applyRow {
-  display: flex;
-  gap: 0.8rem;
-  margin-bottom: 1.5rem;
-  align-items: center;
 }
 
 .applyBtn {

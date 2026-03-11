@@ -5,8 +5,8 @@ const apps = [
   { path: '/list', name: 'list' },
   { path: '/counter', name: 'counter' },
   { path: '/text', name: 'text' },
-  { path: '/convert-image', name: 'image' },
-  { path: '/convert-audio', name: 'audio' },
+  { path: '/image', name: 'image' },
+  { path: '/audio', name: 'audio' },
 ]
 
 export default function Landing() {

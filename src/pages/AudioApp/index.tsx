@@ -254,15 +254,12 @@ export default function AudioApp() {
                 {speedLabel(group)}
               </button>
             ))}
-          </div>
-
-          <div className={styles.applyRow}>
             <button
               className={[styles.applyBtn, hasChanges ? styles.hasChanges : ''].filter(Boolean).join(' ')}
               onClick={applyTransforms}
               disabled={state.buttonsDisabled}
             >
-              ▶ apply
+              ▶
             </button>
             {hasTransforms && (
               <button
@@ -270,7 +267,7 @@ export default function AudioApp() {
                 onClick={resetTransforms}
                 disabled={state.buttonsDisabled}
               >
-                reset transforms
+                reset
               </button>
             )}
           </div>

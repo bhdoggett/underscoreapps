@@ -11,8 +11,8 @@ const router = createBrowserRouter([
   { path: '/list', element: <ListApp /> },
   { path: '/counter', element: <CounterApp /> },
   { path: '/text', element: <TextApp /> },
-  { path: '/convert-image', element: <ImageApp /> },
-  { path: '/convert-audio', element: <AudioApp /> },
+  { path: '/image', element: <ImageApp /> },
+  { path: '/audio', element: <AudioApp /> },
 ])
 
 export default function App() {

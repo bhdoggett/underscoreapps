@@ -4,10 +4,9 @@ import styles from './Landing.module.css'
 const apps = [
   { path: '/list', name: 'list' },
   { path: '/counter', name: 'counter' },
-  { path: '/simple-copy', name: 'simple copy' },
-  { path: '/text-count', name: 'text count' },
-  { path: '/convert-image', name: 'convert image' },
-  { path: '/convert-audio', name: 'convert audio' },
+  { path: '/text', name: 'text' },
+  { path: '/convert-image', name: 'image' },
+  { path: '/convert-audio', name: 'audio' },
 ]
 
 export default function Landing() {

@@ -14,7 +14,7 @@ export default function DecibelsApp() {
   const streamRef = useRef<MediaStream | null>(null)
   const animFrameRef = useRef<number>(0)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  const dataArrayRef = useRef<Uint8Array | null>(null)
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
 
   const sumRef = useRef(0)
@@ -42,7 +42,7 @@ export default function DecibelsApp() {
         analyser.fftSize = 2048
         source.connect(analyser)
         analyserRef.current = analyser
-        dataArrayRef.current = new Uint8Array(analyser.fftSize) as Uint8Array<ArrayBuffer>
+        dataArrayRef.current = new Uint8Array(analyser.fftSize)
 
         setStatus('active')
 

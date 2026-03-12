@@ -5,6 +5,8 @@ import CounterApp from './pages/CounterApp'
 import TextApp from './pages/TextApp'
 import ImageApp from './pages/ImageApp'
 import AudioApp from './pages/AudioApp'
+import DecibelsApp from './pages/DecibelsApp'
+import LocationApp from './pages/LocationApp'
 import ErrorBoundary, { RouteErrorFallback } from './components/ErrorBoundary'
 import NotFound from './pages/NotFound'
 
@@ -19,6 +21,8 @@ const router = createBrowserRouter([
       { path: '/text', element: <TextApp /> },
       { path: '/image', element: <ImageApp /> },
       { path: '/audio', element: <AudioApp /> },
+      { path: '/decibels', element: <DecibelsApp /> },
+      { path: '/location', element: <LocationApp /> },
       { path: '*', element: <NotFound /> },
     ],
   },

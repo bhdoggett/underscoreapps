@@ -7,6 +7,8 @@ const apps = [
   { path: '/text', name: 'text' },
   { path: '/image', name: 'image' },
   { path: '/audio', name: 'audio' },
+  { path: '/decibels', name: 'decibels' },
+  { path: '/location', name: 'location' },
 ]
 
 export default function Landing() {

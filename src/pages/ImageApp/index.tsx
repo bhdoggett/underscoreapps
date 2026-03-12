@@ -1,6 +1,7 @@
 import { useReducer, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import BackLink from '../../components/BackLink'
+import RangeSlider from '../../components/RangeSlider'
 import AppHeader from '../../components/AppHeader'
 import DropZone from '../../components/DropZone'
 import ActionButton from '../../components/ActionButton'
@@ -237,14 +238,7 @@ const [state, dispatch] = useReducer(reducer, initial)
           {sliders.map(([label, value, min, max, display, onChange]) => (
             <div key={label} className={styles.sliderRow}>
               <span className={styles.sliderLabel}>{label}</span>
-              <input
-                type="range"
-                className={styles.sliderInput}
-                min={min}
-                max={max}
-                value={value}
-                onChange={(e) => onChange(Number(e.target.value))}
-              />
+              <RangeSlider min={min} max={max} value={value} onChange={onChange} />
               <span className={styles.sliderValue}>{display}</span>
             </div>
           ))}

@@ -115,12 +115,6 @@
   text-align: center;
 }
 
-.sliderInput {
-  flex: 1;
-  accent-color: var(--fg);
-  cursor: pointer;
-}
-
 .sliderValue {
   font-family: var(--font-mono);
   font-size: 0.65rem;

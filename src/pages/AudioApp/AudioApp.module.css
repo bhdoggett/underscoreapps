@@ -10,8 +10,23 @@
 .fileMeta {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   margin-bottom: 1.2rem;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.closeBtn:hover {
+  color: var(--fg);
 }
 
 .fileInfo {
@@ -22,10 +37,123 @@
 }
 
 .player {
+  display: none;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.playBtn {
+  background: none;
+  border: 1px solid var(--dim);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.playBtn:hover {
+  border-color: var(--muted);
+  color: var(--fg);
+}
+
+.playBtn:disabled {
+  opacity: 0.3;
+  cursor: wait;
+}
+
+.progressRange {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
   width: 100%;
+  cursor: pointer;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--fg);
+  pointer-events: none;
+  transform: translateX(-50%);
+  opacity: 0.5;
+}
+
+.timeDisplay {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.trimTrack {
+  flex: 1;
+  position: relative;
+  height: 40px;
+}
+
+.waveformCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.trimFill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--muted);
+  pointer-events: none;
+}
+
+.trimRange {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.trimRange::-webkit-slider-thumb {
+  pointer-events: all;
+  cursor: ew-resize;
+}
+
+.trimRange::-moz-range-thumb {
+  pointer-events: all;
+  cursor: ew-resize;
+}
+
+.trimHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--fg);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.trimTimes {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--dim);
   margin-bottom: 1.5rem;
-  accent-color: var(--fg);
-  filter: invert(1) hue-rotate(180deg);
 }
 
 .transformRow {

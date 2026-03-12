@@ -36,6 +36,18 @@ export function transformMono(buf: AudioBuffer): AudioBuffer {
   return out
 }
 
+export function trimBuffer(buffer: AudioBuffer, startSec: number, endSec: number): AudioBuffer {
+  const sampleRate = buffer.sampleRate
+  const startSample = Math.round(startSec * sampleRate)
+  const endSample = Math.round(endSec * sampleRate)
+  const length = endSample - startSample
+  const out = new AudioBuffer({ numberOfChannels: buffer.numberOfChannels, length, sampleRate })
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    out.copyToChannel(buffer.getChannelData(ch).slice(startSample, endSample), ch)
+  }
+  return out
+}
+
 export function transformNormalize(buf: AudioBuffer): AudioBuffer {
   let peak = 0
   for (let c = 0; c < buf.numberOfChannels; c++) {

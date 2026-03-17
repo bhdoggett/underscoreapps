@@ -1,4 +1,4 @@
-import { useReducer, useRef } from 'react'
+import { useReducer, useRef, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import BackLink from '../../components/BackLink'
 import RangeSlider from '../../components/RangeSlider'
@@ -7,7 +7,7 @@ import DropZone from '../../components/DropZone'
 import ActionButton from '../../components/ActionButton'
 import ConvertButton from '../../components/ConvertButton'
 import CropOverlay from './CropOverlay'
-import { applyTransforms, exportAsPdf, defaultTransforms } from './imageTransforms'
+import { applyTransforms, exportAsPdf, defaultTransforms, renderRemovedBg } from './imageTransforms'
 import type { TransformState, CropRegion } from './imageTransforms'
 
 function squareCrop(w: number, h: number): CropRegion {
@@ -51,6 +51,8 @@ type Action =
   | { type: 'SET_BLUR'; value: number }
   | { type: 'TOGGLE_CROP' }
   | { type: 'SET_CROP'; region: CropRegion }
+  | { type: 'TOGGLE_REMOVE_BG' }
+  | { type: 'SET_BG_TOLERANCE'; value: number }
   | { type: 'RESET' }
 
 const initial: State = {
@@ -92,6 +94,10 @@ function reducer(state: State, action: Action): State {
       return { ...state, cropActive: !state.cropActive }
     case 'SET_CROP':
       return { ...state, transforms: { ...state.transforms, crop: action.region } }
+    case 'TOGGLE_REMOVE_BG':
+      return { ...state, transforms: { ...state.transforms, removeBg: !state.transforms.removeBg } }
+    case 'SET_BG_TOLERANCE':
+      return { ...state, transforms: { ...state.transforms, bgTolerance: action.value } }
     case 'RESET':
       return { ...initial }
     default:
@@ -128,6 +134,17 @@ function previewStyle(t: TransformState): CSSProperties {
 export default function ImageApp() {
 const [state, dispatch] = useReducer(reducer, initial)
   const imgRef = useRef<HTMLImageElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    if (!state.current || !state.transforms.removeBg) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const imageData = renderRemovedBg(state.current.img, state.transforms)
+    canvas.width = imageData.width
+    canvas.height = imageData.height
+    canvas.getContext('2d')!.putImageData(imageData, 0, 0)
+  }, [state.current, state.transforms])
 
   function loadFile(file: File) {
     if (!file.type.startsWith('image/')) {
@@ -179,6 +196,7 @@ const [state, dispatch] = useReducer(reducer, initial)
     ['greyscale', () => dispatch({ type: 'TOGGLE_GREYSCALE' }), transforms.greyscale],
     ['sepia', () => dispatch({ type: 'TOGGLE_SEPIA' }), transforms.sepia],
     ['invert', () => dispatch({ type: 'TOGGLE_INVERT' }), transforms.invert],
+    ['remove bg', () => dispatch({ type: 'TOGGLE_REMOVE_BG' }), transforms.removeBg],
   ]
 
   function signedLabel(v: number) { return v > 0 ? `+${v}` : String(v) }
@@ -208,21 +226,29 @@ const [state, dispatch] = useReducer(reducer, initial)
 
           <div className={styles.previewWrap}>
             <div className={styles.imgWrap}>
-              <img
-                ref={imgRef}
-                className={styles.preview}
-                src={current.img.src}
-                alt=""
-                style={previewStyle(transforms)}
-              />
-              {cropActive && (
-                <CropOverlay
-                  imgRef={imgRef}
-                  naturalWidth={current.img.naturalWidth}
-                  naturalHeight={current.img.naturalHeight}
-                  initialRegion={transforms.crop}
-                  onCrop={(region) => dispatch({ type: 'SET_CROP', region })}
-                />
+              {transforms.removeBg ? (
+                <div className={styles.checkerboard}>
+                  <canvas ref={canvasRef} className={styles.bgCanvas} />
+                </div>
+              ) : (
+                <>
+                  <img
+                    ref={imgRef}
+                    className={styles.preview}
+                    src={current.img.src}
+                    alt=""
+                    style={previewStyle(transforms)}
+                  />
+                  {cropActive && (
+                    <CropOverlay
+                      imgRef={imgRef}
+                      naturalWidth={current.img.naturalWidth}
+                      naturalHeight={current.img.naturalHeight}
+                      initialRegion={transforms.crop}
+                      onCrop={(region) => dispatch({ type: 'SET_CROP', region })}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -265,6 +291,12 @@ const [state, dispatch] = useReducer(reducer, initial)
                 {label}
               </button>
             ))}
+            {transforms.removeBg && (
+              <>
+                <RangeSlider min={0} max={100} value={transforms.bgTolerance} onChange={(v) => dispatch({ type: 'SET_BG_TOLERANCE', value: v })} />
+                <span className={styles.sliderValue}>{transforms.bgTolerance}</span>
+              </>
+            )}
           </div>
 
           {sliders.map(([label, value, min, max, display, onChange]) => (

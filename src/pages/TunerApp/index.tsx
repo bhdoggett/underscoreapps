@@ -78,7 +78,7 @@ export default function TunerApp() {
   const streamRef = useRef<MediaStream | null>(null)
   const animFrameRef = useRef<number>(0)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  const dataArrayRef = useRef<Float32Array | null>(null)
+  const dataArrayRef = useRef<Float32Array<ArrayBuffer> | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const smoothedFreqRef = useRef<number | null>(null)
   const displayedNoteRef = useRef<string | null>(null)

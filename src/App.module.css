@@ -6,3 +6,10 @@
   position: relative;
   z-index: 200;
 }
+
+@media (min-width: 768px) {
+  .topBar {
+    position: sticky;
+    top: 0;
+  }
+}

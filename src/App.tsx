@@ -14,9 +14,18 @@ import ErrorBoundary, { RouteErrorFallback } from './components/ErrorBoundary'
 import NotFound from './pages/NotFound'
 import ThemeToggle from './components/ThemeToggle'
 
+function Layout() {
+  return (
+    <>
+      <ThemeToggle />
+      <Outlet />
+    </>
+  )
+}
+
 const router = createBrowserRouter([
   {
-    element: <Outlet />,
+    element: <Layout />,
     errorElement: <RouteErrorFallback />,
     children: [
       { path: '/', element: <Landing /> },
@@ -39,7 +48,6 @@ export default function App() {
   return (
     <ErrorBoundary>
       <RouterProvider router={router} />
-      <ThemeToggle />
     </ErrorBoundary>
   )
 }

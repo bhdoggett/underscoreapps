@@ -1,5 +1,5 @@
 .toggle {
-  position: fixed;
+  position: absolute;
   top: 1.5rem;
   right: 1.5rem;
   width: 1rem;
@@ -9,4 +9,10 @@
   cursor: pointer;
   z-index: 1000;
   padding: 0;
+}
+
+@media (min-width: 640px) {
+  .toggle {
+    position: fixed;
+  }
 }

@@ -8,10 +8,10 @@ export default function CountApp() {
   return (
     <div className={styles.app}>
       <AppHeader title="count" />
-      <div className={styles.display}>{count}</div>
-      <div className={styles.btnRow}>
-        <button className={styles.btn} onClick={() => setCount(c => c - 1)}>−</button>
-        <button className={styles.btn} onClick={() => setCount(c => c + 1)}>+</button>
+      <div className={styles.countRow}>
+        <button className={styles.adjBtn} onClick={() => setCount(c => Math.max(0, c - 1))}>−</button>
+        <div className={styles.display}>{count}</div>
+        <button className={styles.adjBtn} onClick={() => setCount(c => c + 1)}>+</button>
       </div>
       <div className={styles.btnRowClear}>
         <button className={[styles.btn, styles.btnClear].join(' ')} onClick={() => setCount(0)}>clear</button>

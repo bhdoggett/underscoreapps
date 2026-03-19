@@ -66,6 +66,7 @@
   line-height: 1;
   color: var(--fg);
   background: none;
+  transform: translateY(-0.1em);
   border: none;
   outline: none;
   padding: 0;
@@ -124,6 +125,7 @@
   font-weight: 900;
   line-height: 1;
   color: var(--fg);
+  transform: translateY(-0.18em);
   width: 2ch;
   text-align: center;
   font-variant-numeric: tabular-nums;

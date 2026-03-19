@@ -9,22 +9,46 @@
   min-height: 100vh;
 }
 
+.countRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
 .display {
   font-family: var(--font-display);
   font-size: clamp(3.5rem, 14vw, 6rem);
   font-weight: 900;
   line-height: 1;
+  transform: translateY(-0.15em);
   letter-spacing: -0.03em;
-  margin-bottom: 2.5rem;
   user-select: none;
   text-align: center;
+  min-width: 3ch;
 }
 
-.btnRow {
+.adjBtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  transition: color 0.15s;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 1.2rem;
-  margin-bottom: 1.2rem;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+.adjBtn:hover,
+.adjBtn:focus-visible {
+  color: var(--fg);
 }
 
 .btnRowClear {

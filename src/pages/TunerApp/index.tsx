@@ -320,27 +320,27 @@ export default function TunerApp() {
 
       {mode === 'play' && (
         <>
+          <div className={styles.btnRow}>
+            <button
+              className={[styles.btn, isPlaying ? styles.btnActive : ''].filter(Boolean).join(' ')}
+              onClick={togglePlay}
+            >
+              {isPlaying ? '■' : '▶'}
+            </button>
+          </div>
+
           <div className={styles.notePicker}>
             <button className={styles.stepBtn} onClick={() => changeNote(-1)}>←</button>
             <span className={`${styles.noteName} ${styles.notePickerName}`}>{midiToName(selectedMidi)}</span>
             <button className={styles.stepBtn} onClick={() => changeNote(1)}>→</button>
           </div>
 
-          <div className={styles.row}>
+          <div className={`${styles.row} ${styles.rowCompact}`}>
             <span className={styles.label}>freq</span>
             <span className={styles.value}>
               {midiToFreq(selectedMidi).toFixed(1)}
               <span className={styles.unit}> Hz</span>
             </span>
-          </div>
-
-          <div className={styles.btnRow}>
-            <button
-              className={[styles.btn, isPlaying ? styles.btnActive : ''].filter(Boolean).join(' ')}
-              onClick={togglePlay}
-            >
-              {isPlaying ? 'stop' : 'play'}
-            </button>
           </div>
         </>
       )}

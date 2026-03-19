@@ -87,6 +87,11 @@
   margin-bottom: 1.5rem;
 }
 
+.rowCompact {
+  justify-content: center;
+  gap: 1rem;
+}
+
 .label {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -112,8 +117,9 @@
 
 .modeRow {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .modeBtn {
@@ -177,7 +183,9 @@
 
 .btnRow {
   display: flex;
-  margin-top: 0.5rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .btn {

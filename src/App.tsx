@@ -10,6 +10,8 @@ import LocationApp from './pages/LocationApp'
 import TimerApp from './pages/TimerApp'
 import TunerApp from './pages/TunerApp'
 import MetronomeApp from './pages/MetronomeApp'
+import ColorApp from './pages/ColorApp'
+import DiceApp from './pages/DiceApp'
 import ErrorBoundary, { RouteErrorFallback } from './components/ErrorBoundary'
 import NotFound from './pages/NotFound'
 import ThemeToggle from './components/ThemeToggle'
@@ -45,6 +47,8 @@ const router = createBrowserRouter([
       { path: '/timer', element: <TimerApp /> },
       { path: '/tuner', element: <TunerApp /> },
       { path: '/metronome', element: <MetronomeApp /> },
+      { path: '/color', element: <ColorApp /> },
+      { path: '/dice', element: <DiceApp /> },
       { path: '*', element: <NotFound /> },
     ],
   },

@@ -9,6 +9,7 @@ const apps = [
   // media
   { path: '/image', name: 'image' },
   { path: '/audio', name: 'audio' },
+  { path: '/color', name: 'color' },
   // audio & music
   { path: '/decibels', name: 'decibels' },
   { path: '/tuner', name: 'tuner' },
@@ -16,6 +17,7 @@ const apps = [
   // tools & time
   { path: '/timer', name: 'timer' },
   { path: '/location', name: 'location' },
+  { path: '/dice', name: 'dice' },
 ]
 
 export default function Landing() {

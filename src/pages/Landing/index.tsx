@@ -84,6 +84,10 @@ export default function Landing() {
           okayest", "dastardly".
         </p>
         <p>
+          Star apps to pin favorites to the top, then drag the handle to reorder
+          them.
+        </p>
+        <p>
           Requests or feedback?{" "}
           <a
             href="https://github.com/bhdoggett/benapps/issues"

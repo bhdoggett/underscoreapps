@@ -23,6 +23,15 @@ const idle: TimerState = {
   accumulatedMs: 0,
 }
 
+const STORAGE_KEY = 'benapps.timer.v1'
+
+type PersistedTimer = {
+  v: 1
+  timer: TimerState
+  laps: number[]
+  doneNotifiedAt: number | null
+}
+
 function formatTime(ms: number, showCentiseconds = false): string {
   const clamped = Math.max(0, ms)
   const totalSec = Math.floor(clamped / 1000)
@@ -49,6 +58,39 @@ export default function TimerApp() {
   const [laps, setLaps] = useState<number[]>([])
   const [, setTick] = useState(0)
   const notifiedRef = useRef(false)
+  const doneNotifiedAtRef = useRef<number | null>(null)
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as PersistedTimer
+      if (!parsed || parsed.v !== 1) return
+      if (!parsed.timer || typeof parsed.timer.mode !== 'string') return
+
+      const nextTimer = parsed.timer
+      if (nextTimer.mode === 'running' && nextTimer.type === 'countdown') {
+        const elapsed = getElapsed(nextTimer)
+        if (elapsed >= nextTimer.totalMs) {
+          setTimer({ ...nextTimer, mode: 'done', accumulatedMs: nextTimer.totalMs })
+        } else {
+          setTimer(nextTimer)
+        }
+      } else {
+        setTimer(nextTimer)
+      }
+
+      setLaps(Array.isArray(parsed.laps) ? parsed.laps.filter(n => typeof n === 'number') : [])
+      doneNotifiedAtRef.current = parsed.doneNotifiedAt ?? null
+      if (nextTimer.mode === 'done' && doneNotifiedAtRef.current) {
+        notifiedRef.current = true
+      }
+    } catch {
+      // ignore invalid persisted state
+    }
+  }, [])
 
   useEffect(() => {
     if (timer.mode !== 'running') return
@@ -67,12 +109,90 @@ export default function TimerApp() {
   useEffect(() => {
     if (timer.mode === 'done' && !notifiedRef.current) {
       notifiedRef.current = true
+      doneNotifiedAtRef.current = Date.now()
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification('timer done')
       }
     }
     if (timer.mode !== 'done') {
       notifiedRef.current = false
+      doneNotifiedAtRef.current = null
+    }
+  }, [timer.mode])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      if (timer.mode === 'idle') {
+        window.localStorage.removeItem(STORAGE_KEY)
+        return
+      }
+      const payload: PersistedTimer = {
+        v: 1,
+        timer,
+        laps,
+        doneNotifiedAt: doneNotifiedAtRef.current,
+      }
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    } catch {
+      // ignore storage failures (private mode, quota, etc)
+    }
+  }, [timer, laps])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    let cancelled = false
+
+    async function acquire() {
+      if (cancelled) return
+      if (timer.mode !== 'running') return
+      if (document.visibilityState !== 'visible') return
+      if (!('wakeLock' in navigator)) return
+
+      try {
+        if (wakeLockRef.current) return
+        wakeLockRef.current = await (navigator as Navigator & {
+          wakeLock: { request: (type: 'screen') => Promise<WakeLockSentinel> }
+        }).wakeLock.request('screen')
+
+        wakeLockRef.current.addEventListener?.('release', () => {
+          wakeLockRef.current = null
+        })
+      } catch {
+        // ignore (permissions, unsupported browser quirks, etc)
+      }
+    }
+
+    async function release() {
+      const sentinel = wakeLockRef.current
+      wakeLockRef.current = null
+      if (!sentinel) return
+      try {
+        await sentinel.release()
+      } catch {
+        // ignore
+      }
+    }
+
+    if (timer.mode === 'running') {
+      acquire()
+    } else {
+      release()
+    }
+
+    function onVisibilityChange() {
+      if (timer.mode !== 'running') return
+      if (document.visibilityState === 'visible') {
+        acquire()
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      release()
     }
   }, [timer.mode])
 

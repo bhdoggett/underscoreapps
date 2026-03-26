@@ -6,7 +6,13 @@ import StatusMessage from '../../components/StatusMessage'
 import { useAbout } from '../../contexts/AboutContext'
 import styles from './DrawApp.module.css'
 
-type HistoryEntry = { data: ImageData; w: number; h: number }
+type HistoryEntry = { data: ImageData | null; blob: Blob | null; w: number; h: number }
+
+const DRAW_DB_NAME = 'benapps'
+const DRAW_DB_VERSION = 1
+const DRAW_META_STORE = 'draw_meta'
+const DRAW_ENTRY_STORE = 'draw_entries'
+const DRAW_META_KEY = 'current'
 
 type State = {
   color: string
@@ -16,6 +22,24 @@ type State = {
   showHandles: boolean
   canvasW: number
   canvasH: number
+}
+
+type PersistedDrawMeta = {
+  key: typeof DRAW_META_KEY
+  v: 1
+  ids: Array<number | null>
+  index: number
+  state: Pick<State, 'color' | 'brushSize' | 'recentColors' | 'canvasW' | 'canvasH'>
+  updatedAt: number
+}
+
+type PersistedDrawEntry = {
+  id?: number
+  v: 1
+  blob: Blob
+  w: number
+  h: number
+  createdAt: number
 }
 
 type Action =
@@ -81,9 +105,158 @@ const RESIZE_CORNERS = [
   { id: 'tl', dxSign: -1, dySign: -1, anchorX: 1, anchorY: 1, cursor: 'nwse-resize', rot: 180, pos: { top:    2, left:  2 } },
 ] as const
 
+function clampCanvasW(w: number) {
+  return Math.round(Math.max(200, Math.min(1240, w)) / 10) * 10
+}
+
+function clampCanvasH(h: number) {
+  return Math.round(Math.max(200, Math.min(2000, h)) / 10) * 10
+}
+
+function openDrawDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB not available'))
+      return
+    }
+    const req = indexedDB.open(DRAW_DB_NAME, DRAW_DB_VERSION)
+    req.onupgradeneeded = () => {
+      const db = req.result
+      if (!db.objectStoreNames.contains(DRAW_META_STORE)) {
+        db.createObjectStore(DRAW_META_STORE, { keyPath: 'key' })
+      }
+      if (!db.objectStoreNames.contains(DRAW_ENTRY_STORE)) {
+        db.createObjectStore(DRAW_ENTRY_STORE, { keyPath: 'id', autoIncrement: true })
+      }
+    }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error ?? new Error('Failed to open IndexedDB'))
+  })
+}
+
+function idbGet<T>(db: IDBDatabase, storeName: string, key: IDBValidKey): Promise<T | undefined> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly')
+    const store = tx.objectStore(storeName)
+    const req = store.get(key)
+    req.onsuccess = () => resolve(req.result as T | undefined)
+    req.onerror = () => reject(req.error ?? new Error('IndexedDB get failed'))
+  })
+}
+
+function idbGetMany<T>(db: IDBDatabase, storeName: string, keys: IDBValidKey[]): Promise<(T | undefined)[]> {
+  return Promise.all(keys.map(k => idbGet<T>(db, storeName, k)))
+}
+
+function idbPut<T>(db: IDBDatabase, storeName: string, value: T): Promise<IDBValidKey> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite')
+    const store = tx.objectStore(storeName)
+    const req = store.put(value as any)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error ?? new Error('IndexedDB put failed'))
+  })
+}
+
+function idbAdd<T>(db: IDBDatabase, storeName: string, value: T): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite')
+    const store = tx.objectStore(storeName)
+    const req = store.add(value as any)
+    req.onsuccess = () => resolve(req.result as number)
+    req.onerror = () => reject(req.error ?? new Error('IndexedDB add failed'))
+  })
+}
+
+function idbDelete(db: IDBDatabase, storeName: string, key: IDBValidKey): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite')
+    const store = tx.objectStore(storeName)
+    const req = store.delete(key)
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error ?? new Error('IndexedDB delete failed'))
+  })
+}
+
+async function blobToImageData(blob: Blob, w: number, h: number): Promise<ImageData> {
+  const bitmap = await createImageBitmap(blob)
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2D context unavailable')
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  bitmap.close()
+  return ctx.getImageData(0, 0, w, h)
+}
+
 export default function DrawApp() {
+  const dbRef = useRef<IDBDatabase | null>(null)
+  const historyIdsRef = useRef<Array<number | null>>([])
+  const metaPersistTimerRef = useRef<number | null>(null)
+
   const [state, dispatch] = useReducer(reducer, initial)
   const { setContent, setIsOpen } = useAbout()
+
+  useEffect(() => {
+    let cancelled = false
+    openDrawDb()
+      .then(async (db) => {
+        if (cancelled) return
+        dbRef.current = db
+        const meta = await idbGet<PersistedDrawMeta>(db, DRAW_META_STORE, DRAW_META_KEY)
+        if (cancelled) return
+        if (!meta || meta.v !== 1) return
+
+        const ids = Array.isArray(meta.ids) ? meta.ids : []
+        const numericIds = ids.filter((id): id is number => typeof id === 'number')
+        const entries = await idbGetMany<PersistedDrawEntry>(db, DRAW_ENTRY_STORE, numericIds)
+        if (cancelled) return
+
+        const entryById = new Map<number, PersistedDrawEntry>()
+        numericIds.forEach((id, i) => {
+          const e = entries[i]
+          if (e && e.v === 1 && e.blob instanceof Blob) entryById.set(id, e)
+        })
+
+        const hydratedEntries: HistoryEntry[] = ids.map((id) => {
+          if (typeof id !== 'number') return { data: null, blob: null, w: meta.state.canvasW, h: meta.state.canvasH }
+          const e = entryById.get(id)
+          if (!e) return { data: null, blob: null, w: meta.state.canvasW, h: meta.state.canvasH }
+          return { data: null, blob: e.blob, w: e.w, h: e.h }
+        })
+
+        const usable = hydratedEntries.filter(e => e.blob)
+        if (usable.length === 0) return
+
+        historyRef.current = hydratedEntries
+        historyIdsRef.current = ids
+        historyIndexRef.current = Math.max(0, Math.min(meta.index ?? 0, hydratedEntries.length - 1))
+
+        dispatch({ type: 'SET_COLOR', color: meta.state.color })
+        dispatch({ type: 'SET_BRUSH_SIZE', size: meta.state.brushSize })
+        dispatch({ type: 'SET_CANVAS_W', w: clampCanvasW(meta.state.canvasW) })
+        dispatch({ type: 'SET_CANVAS_H', h: clampCanvasH(meta.state.canvasH) })
+        if (meta.state.recentColors?.[0]) {
+          dispatch({ type: 'ADD_RECENT_COLOR', color: meta.state.recentColors[0] })
+        }
+
+        const current = hydratedEntries[historyIndexRef.current]
+        if (!current?.blob) return
+
+        const imgData = await blobToImageData(current.blob, current.w, current.h)
+        if (cancelled) return
+        current.data = imgData
+        actualDimsRef.current = { w: current.w, h: current.h }
+        pendingRestoreRef.current = imgData
+        dispatch({ type: 'SET_CANVAS_W', w: current.w })
+        dispatch({ type: 'SET_CANVAS_H', h: current.h })
+        setCommitCount(c => c + 1)
+      })
+      .catch(() => {})
+
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setContent(
@@ -117,9 +290,10 @@ export default function DrawApp() {
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingResizeRef = useRef<{ img: HTMLImageElement; oldW: number; oldH: number; anchorX: number; anchorY: number } | null>(null)
   const pendingRestoreRef = useRef<ImageData | null>(null)
+  const undoRedoInFlightRef = useRef(false)
   // actualDims tracks the canvas element's real pixel dimensions — only updated on commit
   // so live drag previews (canvasW/H state changes) don't reset the canvas.
-  const actualDimsRef = useRef({ w: initial.canvasW, h: initial.canvasH })
+  const actualDimsRef = useRef({ w: state.canvasW, h: state.canvasH })
   const [commitCount, setCommitCount] = useState(0)
   const [isResizing, setIsResizing] = useState(false)
   const resizeDragRef = useRef<{ startX: number; startY: number; startW: number; startH: number; displayW: number; displayH: number; dxSign: number; dySign: number; anchorX: number; anchorY: number } | null>(null)
@@ -127,21 +301,77 @@ export default function DrawApp() {
   const stateRef = useRef(state)
   stateRef.current = state
 
+  const schedulePersistMetaToIdb = useCallback(() => {
+    if (typeof window === 'undefined') return
+    if (metaPersistTimerRef.current !== null) window.clearTimeout(metaPersistTimerRef.current)
+    metaPersistTimerRef.current = window.setTimeout(() => {
+      metaPersistTimerRef.current = null
+      const db = dbRef.current
+      if (!db) return
+      const meta: PersistedDrawMeta = {
+        key: DRAW_META_KEY,
+        v: 1,
+        ids: historyIdsRef.current,
+        index: historyIndexRef.current,
+        state: {
+          color: stateRef.current.color,
+          brushSize: stateRef.current.brushSize,
+          recentColors: stateRef.current.recentColors,
+          canvasW: actualDimsRef.current.w,
+          canvasH: actualDimsRef.current.h,
+        },
+        updatedAt: Date.now(),
+      }
+      void idbPut(db, DRAW_META_STORE, meta)
+    }, 200)
+  }, [])
+
+  const persistHistorySlotToIdb = useCallback((slot: number, w: number, h: number) => {
+    const canvas = canvasRef.current
+    const db = dbRef.current
+    if (!canvas || !db) return
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const entry: PersistedDrawEntry = { v: 1, blob, w, h, createdAt: Date.now() }
+      void idbAdd(db, DRAW_ENTRY_STORE, entry).then((id) => {
+        if (slot < 0 || slot >= historyIdsRef.current.length) return
+        const prev = historyIdsRef.current[slot]
+        historyIdsRef.current[slot] = id
+        if (typeof prev === 'number') void idbDelete(db, DRAW_ENTRY_STORE, prev)
+        schedulePersistMetaToIdb()
+      }).catch(() => {})
+    }, 'image/png')
+  }, [schedulePersistMetaToIdb])
+
   const pushHistory = useCallback((entry: HistoryEntry) => {
-    const newHistory = historyRef.current.slice(0, historyIndexRef.current + 1)
+    const keepTo = historyIndexRef.current + 1
+    const removedRedoIds = historyIdsRef.current.slice(keepTo).filter((id): id is number => typeof id === 'number')
+    const newHistory = historyRef.current.slice(0, keepTo)
+    const newIds = historyIdsRef.current.slice(0, keepTo)
     newHistory.push(entry)
+    newIds.push(null)
     if (newHistory.length > MAX_HISTORY) newHistory.shift()
+    if (newIds.length > MAX_HISTORY) {
+      const dropped = newIds.shift()
+      if (typeof dropped === 'number' && dbRef.current) void idbDelete(dbRef.current, DRAW_ENTRY_STORE, dropped)
+    }
     historyRef.current = newHistory
     historyIndexRef.current = newHistory.length - 1
-  }, [])
+    historyIdsRef.current = newIds
+    if (removedRedoIds.length > 0 && dbRef.current) {
+      removedRedoIds.forEach((id) => void idbDelete(dbRef.current!, DRAW_ENTRY_STORE, id))
+    }
+    schedulePersistMetaToIdb()
+  }, [schedulePersistMetaToIdb])
 
   const saveHistory = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    pushHistory({ data: ctx.getImageData(0, 0, canvas.width, canvas.height), w: canvas.width, h: canvas.height })
-  }, [pushHistory])
+    pushHistory({ data: ctx.getImageData(0, 0, canvas.width, canvas.height), blob: null, w: canvas.width, h: canvas.height })
+    persistHistorySlotToIdb(historyIndexRef.current, canvas.width, canvas.height)
+  }, [persistHistorySlotToIdb, pushHistory])
 
   // Only fires on explicit commit (not on every live drag tick).
   useEffect(() => {
@@ -169,25 +399,26 @@ export default function DrawApp() {
         const copyH = Math.min(newH, oldH)
         ctx.drawImage(img, srcX, srcY, copyW, copyH, destX, destY, copyW, copyH)
         // Push post-resize state (pre-resize was already saved before commit)
-        pushHistory({ data: ctx.getImageData(0, 0, newW, newH), w: newW, h: newH })
+        pushHistory({ data: ctx.getImageData(0, 0, newW, newH), blob: null, w: newW, h: newH })
         pendingResizeRef.current = null
+        persistHistorySlotToIdb(historyIndexRef.current, newW, newH)
       }
       if (img.complete) apply()
       else img.onload = apply
     } else {
-      historyRef.current = [{ data: ctx.getImageData(0, 0, canvas.width, canvas.height), w: canvas.width, h: canvas.height }]
+      historyRef.current = [{ data: ctx.getImageData(0, 0, canvas.width, canvas.height), blob: null, w: canvas.width, h: canvas.height }]
       historyIndexRef.current = 0
+      historyIdsRef.current = [null]
+      persistHistorySlotToIdb(0, canvas.width, canvas.height)
     }
   }, [commitCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const commitResize = (w: number, h: number, anchorX = 0, anchorY = 0) => {
-    const cw = Math.round(Math.max(200, Math.min(1240, w)) / 10) * 10
-    const ch = Math.round(Math.max(200, Math.min(2000, h)) / 10) * 10
+    const cw = clampCanvasW(w)
+    const ch = clampCanvasH(h)
     if (cw === actualDimsRef.current.w && ch === actualDimsRef.current.h) return
     const canvas = canvasRef.current
     if (!canvas) return
-    // Save pre-resize state before canvas is cleared
-    saveHistory()
     const img = new Image()
     img.src = canvas.toDataURL()
     pendingResizeRef.current = { img, oldW: actualDimsRef.current.w, oldH: actualDimsRef.current.h, anchorX, anchorY }
@@ -258,7 +489,6 @@ export default function DrawApp() {
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
-    saveHistory()
     isDrawing.current = true
     const pos = getCanvasPos(e)
     lastPos.current = pos
@@ -302,58 +532,87 @@ export default function DrawApp() {
   }
 
   const handlePointerUp = () => {
+    if (!isDrawing.current) return
     isDrawing.current = false
     lastPos.current = null
+    // Capture post-stroke state (one snapshot per stroke).
+    saveHistory()
   }
 
-  const restoreHistoryEntry = (entry: HistoryEntry) => {
+  const restoreHistoryEntry = useCallback(async (entry: HistoryEntry) => {
     const canvas = canvasRef.current
     if (!canvas) return
+    let data = entry.data
+    if (!data && entry.blob) {
+      try {
+        data = await blobToImageData(entry.blob, entry.w, entry.h)
+        entry.data = data
+      } catch {
+        return
+      }
+    }
+    if (!data) return
     if (entry.w !== actualDimsRef.current.w || entry.h !== actualDimsRef.current.h) {
       // Dimensions differ: route through commitCount effect so putImageData runs
       // after React has set the canvas width/height attributes (which clears the canvas).
       actualDimsRef.current = { w: entry.w, h: entry.h }
-      pendingRestoreRef.current = entry.data
+      pendingRestoreRef.current = data
       dispatch({ type: 'SET_CANVAS_W', w: entry.w })
       dispatch({ type: 'SET_CANVAS_H', h: entry.h })
       setCommitCount(c => c + 1)
     } else {
       const ctx = canvas.getContext('2d')
       if (!ctx) return
-      ctx.putImageData(entry.data, 0, 0)
+      ctx.putImageData(data, 0, 0)
     }
-  }
+  }, [])
 
-  const undo = useCallback(() => {
+  const undo = useCallback(async () => {
+    if (undoRedoInFlightRef.current) return
     if (historyIndexRef.current <= 0) return
+    undoRedoInFlightRef.current = true
     historyIndexRef.current--
-    restoreHistoryEntry(historyRef.current[historyIndexRef.current])
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    try {
+      await restoreHistoryEntry(historyRef.current[historyIndexRef.current])
+      schedulePersistMetaToIdb()
+    } finally {
+      undoRedoInFlightRef.current = false
+    }
+  }, [restoreHistoryEntry, schedulePersistMetaToIdb])
 
-  const redo = useCallback(() => {
+  const redo = useCallback(async () => {
+    if (undoRedoInFlightRef.current) return
     if (historyIndexRef.current >= historyRef.current.length - 1) return
+    undoRedoInFlightRef.current = true
     historyIndexRef.current++
-    restoreHistoryEntry(historyRef.current[historyIndexRef.current])
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    try {
+      await restoreHistoryEntry(historyRef.current[historyIndexRef.current])
+      schedulePersistMetaToIdb()
+    } finally {
+      undoRedoInFlightRef.current = false
+    }
+  }, [restoreHistoryEntry, schedulePersistMetaToIdb])
 
   const clear = () => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    saveHistory()
     ctx.globalCompositeOperation = 'source-over'
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Capture post-clear state (one snapshot per clear).
+    saveHistory()
   }
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      if (e.repeat) return
       const meta = e.metaKey || e.ctrlKey
       if (!meta) return
-      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
-      if (e.key === 'z' && e.shiftKey) { e.preventDefault(); redo() }
-      if (e.key === 'y') { e.preventDefault(); redo() }
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); void undo() }
+      if (e.key === 'z' && e.shiftKey) { e.preventDefault(); void redo() }
+      if (e.key === 'y') { e.preventDefault(); void redo() }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)

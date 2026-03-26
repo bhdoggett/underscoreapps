@@ -1,7 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppHeader from "../../components/AppHeader";
 import ActionButton from "../../components/ActionButton";
 import styles from "./TextApp.module.css";
+
+const STORAGE_KEY = "benapps.text.v1";
 
 function formatTime(minutes: number): string {
   const totalSeconds = Math.round(minutes * 60);
@@ -15,6 +17,33 @@ export default function TextApp() {
   const [text, setText] = useState("");
   const [status, setStatus] = useState("");
   const editorRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { v: 1; text: string };
+      if (!parsed || parsed.v !== 1) return;
+      if (typeof parsed.text !== "string") return;
+      setText(parsed.text);
+    } catch {
+      // ignore invalid persisted state
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (!text) {
+        window.localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, text }));
+    } catch {
+      // ignore storage failures (private mode, quota, etc)
+    }
+  }, [text]);
 
   const wordList = text.trim() === "" ? [] : text.trim().split(/\s+/);
   const words = wordList.length;
@@ -50,6 +79,13 @@ export default function TextApp() {
   function handleClear() {
     setText("");
     setStatus("");
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
     editorRef.current?.focus();
   }
 

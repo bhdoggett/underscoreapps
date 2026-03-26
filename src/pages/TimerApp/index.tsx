@@ -57,6 +57,7 @@ export default function TimerApp() {
   const [timer, setTimer] = useState<TimerState>(idle)
   const [laps, setLaps] = useState<number[]>([])
   const [, setTick] = useState(0)
+  const [isLandscapeMobile, setIsLandscapeMobile] = useState(false)
   const notifiedRef = useRef(false)
   const doneNotifiedAtRef = useRef<number | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -119,6 +120,19 @@ export default function TimerApp() {
       doneNotifiedAtRef.current = null
     }
   }, [timer.mode])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+
+    const media = window.matchMedia('(orientation: landscape) and (pointer: coarse)')
+    const update = () => setIsLandscapeMobile(media.matches)
+    update()
+
+    media.addEventListener?.('change', update)
+    return () => {
+      media.removeEventListener?.('change', update)
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -263,6 +277,7 @@ export default function TimerApp() {
     const currentLapMs = elapsed - lapOffset
     const displayMs = timer.type === 'countdown' ? timer.totalMs - elapsed : currentLapMs
     const timeStr = isDone ? '00:00' : formatTime(displayMs, timer.type === 'stopwatch')
+    const showFocusMode = timer.type === 'countdown' && isLandscapeMobile
 
     const label = timer.type === 'countdown'
       ? (isDone ? 'done' : `${timer.totalMs / 60000} min`)
@@ -271,6 +286,16 @@ export default function TimerApp() {
     const splits = laps.map((ms, i) => i === 0 ? ms : ms - laps[i - 1])
     const best = splits.length > 1 ? Math.min(...splits) : null
     const worst = splits.length > 1 ? Math.max(...splits) : null
+
+    if (showFocusMode) {
+      return (
+        <div className={styles.focusOverlay}>
+          <div className={`${styles.focusTime}${isDone ? ` ${styles.done}` : ''}`}>
+            {timeStr}
+          </div>
+        </div>
+      )
+    }
 
     return (
       <div className={styles.overlay}>

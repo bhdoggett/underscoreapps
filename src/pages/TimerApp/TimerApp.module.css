@@ -87,6 +87,25 @@
   padding-top: max(8vh, 2rem);
 }
 
+.focusOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.focusTime {
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 24vw, 16rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
 .labelRow {
   display: flex;
   justify-content: space-between;

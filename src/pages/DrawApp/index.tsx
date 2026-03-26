@@ -6,15 +6,14 @@ import StatusMessage from '../../components/StatusMessage'
 import { useAbout } from '../../contexts/AboutContext'
 import styles from './DrawApp.module.css'
 
-type CropRect = { x: number; y: number; w: number; h: number }
+type HistoryEntry = { data: ImageData; w: number; h: number }
 
 type State = {
   color: string
   brushSize: number
   copied: boolean
   recentColors: string[]
-  cropMode: boolean
-  cropRect: CropRect | null
+  showHandles: boolean
   canvasW: number
   canvasH: number
 }
@@ -24,8 +23,7 @@ type Action =
   | { type: 'SET_BRUSH_SIZE'; size: number }
   | { type: 'SET_COPIED'; copied: boolean }
   | { type: 'ADD_RECENT_COLOR'; color: string }
-  | { type: 'TOGGLE_CROP_MODE' }
-  | { type: 'SET_CROP_RECT'; rect: CropRect | null }
+  | { type: 'TOGGLE_HANDLES' }
   | { type: 'SET_CANVAS_W'; w: number }
   | { type: 'SET_CANVAS_H'; h: number }
 
@@ -34,8 +32,7 @@ const initial: State = {
   brushSize: 4,
   copied: false,
   recentColors: [],
-  cropMode: false,
-  cropRect: null,
+  showHandles: false,
   canvasW: 1240,
   canvasH: 840,
 }
@@ -49,10 +46,8 @@ function reducer(state: State, action: Action): State {
       const filtered = state.recentColors.filter(c => c !== action.color)
       return { ...state, recentColors: [action.color, ...filtered].slice(0, 1) }
     }
-    case 'TOGGLE_CROP_MODE':
-      return { ...state, cropMode: !state.cropMode, cropRect: null }
-    case 'SET_CROP_RECT':
-      return { ...state, cropRect: action.rect }
+    case 'TOGGLE_HANDLES':
+      return { ...state, showHandles: !state.showHandles }
     case 'SET_CANVAS_W': return { ...state, canvasW: action.w }
     case 'SET_CANVAS_H': return { ...state, canvasH: action.h }
   }
@@ -99,11 +94,12 @@ export default function DrawApp() {
         </p>
         <p>
           Click a size dot to quickly switch brush size, or drag the size input for
-          fine control. Use the crop button to define an export region.
+          fine control. Use the resize button to toggle corner handles for adjusting
+          canvas size.
         </p>
         <p>
           Keyboard shortcuts: <strong>Cmd+Z</strong> to undo,{' '}
-          <strong>Cmd+Shift+Z</strong> to redo, <strong>Esc</strong> to cancel crop.
+          <strong>Cmd+Shift+Z</strong> to redo.
         </p>
       </>
     )
@@ -114,14 +110,13 @@ export default function DrawApp() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const overlayRef = useRef<HTMLCanvasElement>(null)
   const isDrawing = useRef(false)
   const lastPos = useRef<{ x: number; y: number } | null>(null)
-  const cropStart = useRef<{ x: number; y: number } | null>(null)
-  const historyRef = useRef<ImageData[]>([])
+  const historyRef = useRef<HistoryEntry[]>([])
   const historyIndexRef = useRef(-1)
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingResizeRef = useRef<{ img: HTMLImageElement; oldW: number; oldH: number; anchorX: number; anchorY: number } | null>(null)
+  const pendingRestoreRef = useRef<ImageData | null>(null)
   // actualDims tracks the canvas element's real pixel dimensions — only updated on commit
   // so live drag previews (canvasW/H state changes) don't reset the canvas.
   const actualDimsRef = useRef({ w: initial.canvasW, h: initial.canvasH })
@@ -132,6 +127,22 @@ export default function DrawApp() {
   const stateRef = useRef(state)
   stateRef.current = state
 
+  const pushHistory = useCallback((entry: HistoryEntry) => {
+    const newHistory = historyRef.current.slice(0, historyIndexRef.current + 1)
+    newHistory.push(entry)
+    if (newHistory.length > MAX_HISTORY) newHistory.shift()
+    historyRef.current = newHistory
+    historyIndexRef.current = newHistory.length - 1
+  }, [])
+
+  const saveHistory = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    pushHistory({ data: ctx.getImageData(0, 0, canvas.width, canvas.height), w: canvas.width, h: canvas.height })
+  }, [pushHistory])
+
   // Only fires on explicit commit (not on every live drag tick).
   useEffect(() => {
     const canvas = canvasRef.current
@@ -140,7 +151,10 @@ export default function DrawApp() {
     if (!ctx) return
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    if (pendingResizeRef.current) {
+    if (pendingRestoreRef.current) {
+      ctx.putImageData(pendingRestoreRef.current, 0, 0)
+      pendingRestoreRef.current = null
+    } else if (pendingResizeRef.current) {
       const { img, oldW, oldH, anchorX, anchorY } = pendingResizeRef.current
       const newW = canvas.width
       const newH = canvas.height
@@ -154,14 +168,14 @@ export default function DrawApp() {
         const copyW = Math.min(newW, oldW)
         const copyH = Math.min(newH, oldH)
         ctx.drawImage(img, srcX, srcY, copyW, copyH, destX, destY, copyW, copyH)
-        historyRef.current = [ctx.getImageData(0, 0, canvas.width, canvas.height)]
-        historyIndexRef.current = 0
+        // Push post-resize state (pre-resize was already saved before commit)
+        pushHistory({ data: ctx.getImageData(0, 0, newW, newH), w: newW, h: newH })
         pendingResizeRef.current = null
       }
       if (img.complete) apply()
       else img.onload = apply
     } else {
-      historyRef.current = [ctx.getImageData(0, 0, canvas.width, canvas.height)]
+      historyRef.current = [{ data: ctx.getImageData(0, 0, canvas.width, canvas.height), w: canvas.width, h: canvas.height }]
       historyIndexRef.current = 0
     }
   }, [commitCount]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -172,6 +186,8 @@ export default function DrawApp() {
     if (cw === actualDimsRef.current.w && ch === actualDimsRef.current.h) return
     const canvas = canvasRef.current
     if (!canvas) return
+    // Save pre-resize state before canvas is cleared
+    saveHistory()
     const img = new Image()
     img.src = canvas.toDataURL()
     pendingResizeRef.current = { img, oldW: actualDimsRef.current.w, oldH: actualDimsRef.current.h, anchorX, anchorY }
@@ -231,27 +247,6 @@ export default function DrawApp() {
     commitResize(newW, newH, anchorX, anchorY)
   }
 
-  // Draw crop overlay
-  useEffect(() => {
-    const overlay = overlayRef.current
-    if (!overlay) return
-    const ctx = overlay.getContext('2d')
-    if (!ctx) return
-    ctx.clearRect(0, 0, state.canvasW, state.canvasH)
-
-    const rect = state.cropRect
-    if (!rect || !state.cropMode) return
-
-    ctx.fillStyle = 'rgba(0,0,0,0.45)'
-    ctx.fillRect(0, 0, state.canvasW, state.canvasH)
-    ctx.clearRect(rect.x, rect.y, rect.w, rect.h)
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)'
-    ctx.lineWidth = 2
-    ctx.setLineDash([8, 6])
-    ctx.strokeRect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2)
-    ctx.setLineDash([])
-  }, [state.cropMode, state.cropRect])
-
   const getCanvasPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!
     const rect = canvas.getBoundingClientRect()
@@ -261,29 +256,8 @@ export default function DrawApp() {
     }
   }
 
-  const saveHistory = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const newHistory = historyRef.current.slice(0, historyIndexRef.current + 1)
-    newHistory.push(snapshot)
-    if (newHistory.length > MAX_HISTORY) newHistory.shift()
-    historyRef.current = newHistory
-    historyIndexRef.current = newHistory.length - 1
-  }, [])
-
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
-
-    if (stateRef.current.cropMode) {
-      const pos = getCanvasPos(e)
-      cropStart.current = pos
-      dispatch({ type: 'SET_CROP_RECT', rect: { x: pos.x, y: pos.y, w: 0, h: 0 } })
-      return
-    }
-
     saveHistory()
     isDrawing.current = true
     const pos = getCanvasPos(e)
@@ -304,17 +278,6 @@ export default function DrawApp() {
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (stateRef.current.cropMode) {
-      if (!cropStart.current) return
-      const pos = getCanvasPos(e)
-      const x = Math.min(cropStart.current.x, pos.x)
-      const y = Math.min(cropStart.current.y, pos.y)
-      const w = Math.abs(pos.x - cropStart.current.x)
-      const h = Math.abs(pos.y - cropStart.current.y)
-      dispatch({ type: 'SET_CROP_RECT', rect: { x, y, w, h } })
-      return
-    }
-
     if (!isDrawing.current || !lastPos.current) return
     const canvas = canvasRef.current
     if (!canvas) return
@@ -339,30 +302,39 @@ export default function DrawApp() {
   }
 
   const handlePointerUp = () => {
-    cropStart.current = null
     isDrawing.current = false
     lastPos.current = null
+  }
+
+  const restoreHistoryEntry = (entry: HistoryEntry) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    if (entry.w !== actualDimsRef.current.w || entry.h !== actualDimsRef.current.h) {
+      // Dimensions differ: route through commitCount effect so putImageData runs
+      // after React has set the canvas width/height attributes (which clears the canvas).
+      actualDimsRef.current = { w: entry.w, h: entry.h }
+      pendingRestoreRef.current = entry.data
+      dispatch({ type: 'SET_CANVAS_W', w: entry.w })
+      dispatch({ type: 'SET_CANVAS_H', h: entry.h })
+      setCommitCount(c => c + 1)
+    } else {
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.putImageData(entry.data, 0, 0)
+    }
   }
 
   const undo = useCallback(() => {
     if (historyIndexRef.current <= 0) return
     historyIndexRef.current--
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0)
-  }, [])
+    restoreHistoryEntry(historyRef.current[historyIndexRef.current])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const redo = useCallback(() => {
     if (historyIndexRef.current >= historyRef.current.length - 1) return
     historyIndexRef.current++
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0)
-  }, [])
+    restoreHistoryEntry(historyRef.current[historyIndexRef.current])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clear = () => {
     const canvas = canvasRef.current
@@ -377,10 +349,6 @@ export default function DrawApp() {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && stateRef.current.cropMode) {
-        dispatch({ type: 'TOGGLE_CROP_MODE' })
-        return
-      }
       const meta = e.metaKey || e.ctrlKey
       if (!meta) return
       if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
@@ -391,23 +359,9 @@ export default function DrawApp() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [undo, redo])
 
-  const getCropCanvas = (): HTMLCanvasElement => {
-    const canvas = canvasRef.current!
-    const rect = state.cropRect
-    if (!rect || rect.w < 2 || rect.h < 2) return canvas
-    const ctx = canvas.getContext('2d')!
-    const cropped = ctx.getImageData(rect.x, rect.y, rect.w, rect.h)
-    const tmp = document.createElement('canvas')
-    tmp.width = rect.w
-    tmp.height = rect.h
-    tmp.getContext('2d')!.putImageData(cropped, 0, 0)
-    return tmp
-  }
-
   const download = (format: 'png' | 'jpeg' | 'webp') => {
-    const src = (state.cropMode && state.cropRect) ? getCropCanvas() : canvasRef.current!
     const mime = `image/${format}`
-    const url = src.toDataURL(mime)
+    const url = canvasRef.current!.toDataURL(mime)
     const a = document.createElement('a')
     a.href = url
     a.download = `drawing.${format === 'jpeg' ? 'jpg' : format}`
@@ -415,8 +369,7 @@ export default function DrawApp() {
   }
 
   const copyPng = () => {
-    const src = (state.cropMode && state.cropRect) ? getCropCanvas() : canvasRef.current!
-    src.toBlob((blob) => {
+    canvasRef.current!.toBlob((blob) => {
       if (!blob) return
       navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
         .then(() => {
@@ -432,9 +385,7 @@ export default function DrawApp() {
   const r = Math.max(2, Math.round((state.brushSize * 0.45) / 2))
   const d = r * 2
   const cursorSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='${d}' height='${d}'><circle cx='${r}' cy='${r}' r='${r}' fill='black'/></svg>`
-  const canvasCursor = state.cropMode
-    ? 'crosshair'
-    : `url("data:image/svg+xml,${encodeURIComponent(cursorSvg)}") ${r} ${r}, crosshair`
+  const canvasCursor = `url("data:image/svg+xml,${encodeURIComponent(cursorSvg)}") ${r} ${r}, crosshair`
 
   return (
     <div className={styles.app}>
@@ -552,15 +503,16 @@ export default function DrawApp() {
             />
           </div>
           <div className={styles.cropCol}>
+            <span className={[styles.label, styles.cropLabel].join(' ')}>crop</span>
             <button
-              className={[styles.toolBtnIcon, state.cropMode ? styles.active : ''].filter(Boolean).join(' ')}
-              onClick={() => dispatch({ type: 'TOGGLE_CROP_MODE' })}
-              title="Crop"
-              aria-label="Crop"
+              className={[styles.toolBtnIcon, state.showHandles ? styles.active : ''].filter(Boolean).join(' ')}
+              onClick={() => dispatch({ type: 'TOGGLE_HANDLES' })}
+              title="Resize canvas"
+              aria-label="Resize canvas"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <polyline points="8.5,1 12,1 12,4.5" />
-                <polyline points="4.5,12 1,12 1,8.5" />
+                <polyline points="1,4.5 1,1 4.5,1" />
+                <polyline points="8.5,12 12,12 12,8.5" />
               </svg>
             </button>
           </div>
@@ -582,13 +534,6 @@ export default function DrawApp() {
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
         />
-        <canvas
-          ref={overlayRef}
-          className={styles.overlay}
-          width={actualDimsRef.current.w}
-          height={actualDimsRef.current.h}
-          style={{ pointerEvents: 'none' }}
-        />
         {isResizing && (
           <div
             className={styles.resizeGhost}
@@ -600,7 +545,7 @@ export default function DrawApp() {
             }}
           />
         )}
-        {RESIZE_CORNERS.filter(c => c.id === 'br' || c.id === 'tl').map(({ id, dxSign, dySign, anchorX, anchorY, cursor, rot, pos }) => (
+        {state.showHandles && RESIZE_CORNERS.filter(c => c.id === 'br' || c.id === 'tl').map(({ id, dxSign, dySign, anchorX, anchorY, cursor, rot, pos }) => (
           <div
             key={id}
             className={styles.resizeHandle}
@@ -610,10 +555,12 @@ export default function DrawApp() {
             onPointerUp={handleResizePointerUp}
             onPointerCancel={handleResizePointerUp}
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style={{ transform: `rotate(${rot}deg)` }}>
+            <svg width="12" height="12" viewBox="-1.5 -1.5 13 13" fill="currentColor" style={{ transform: `rotate(${rot}deg)` }}>
               <circle cx="8.5" cy="8.5" r="1.2"/>
               <circle cx="4.5" cy="8.5" r="1.2"/>
+              <circle cx="0.5" cy="8.5" r="1.2"/>
               <circle cx="8.5" cy="4.5" r="1.2"/>
+              <circle cx="8.5" cy="0.5" r="1.2"/>
             </svg>
           </div>
         ))}

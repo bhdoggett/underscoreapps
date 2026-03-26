@@ -33,7 +33,19 @@
 
 .cropCol {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.cropLabel {
+  display: none;
+}
+
+@media (min-width: 426px) {
+  .cropLabel {
+    display: inline;
+  }
 }
 
 .historyGroup {
@@ -206,7 +218,7 @@
   font-family: var(--font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.1em;
-  padding: 0.35rem 0.4rem;
+  padding: 0.25rem 0.4rem;
   width: 3.2rem;
 }
 
@@ -297,8 +309,8 @@
 
 .resizeHandle {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,8 +325,8 @@
 
 @media (max-width: 425px) {
   .resizeHandle {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   .canvasSizeGroup {

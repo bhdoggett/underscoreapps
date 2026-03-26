@@ -92,18 +92,18 @@
   inset: 0;
   background: var(--bg);
   z-index: 120;
-  display: grid;
-  place-items: center;
-  padding: 0 4vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   overflow: visible;
 }
 
 .focusCenter {
-  width: 5.5ch;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  width: 100%;
 }
 
 .focusTime {
@@ -113,8 +113,7 @@
   line-height: 1;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1;
-  width: 5.5ch;
+  width: 4.5ch;
   text-align: left;
   transform: translateY(-0.16em);
   white-space: nowrap;
@@ -190,10 +189,20 @@
   color: var(--fg);
   margin-bottom: 1.5rem;
   font-variant-numeric: tabular-nums;
-  width: 7ch;
-  display: flex;
+  display: inline-flex;
   justify-content: center;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
   transform: translateY(-0.12em);
+}
+
+.timeDisplayCountdown {
+  width: fit-content;
+}
+
+.timeDisplayStopwatch {
+  width: fit-content;
 }
 
 .timeDisplay.done {
@@ -209,6 +218,7 @@
   display: flex;
   gap: 0.6rem;
   justify-content: center;
+  width: 100%;
 }
 
 .controlBtn {
@@ -239,6 +249,15 @@
   font-variant-numeric: tabular-nums;
   margin-bottom: 0.5rem;
   margin-top: -0.75rem;
+  display: inline-flex;
+  justify-content: center;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.totalTimeDisplayStopwatch {
+  width: fit-content;
 }
 
 /* Laps */
@@ -298,4 +317,14 @@
 
 .lapWorst {
   opacity: 0.4;
+}
+
+@media (orientation: landscape) and (pointer: coarse) {
+  .timeDisplayStopwatch {
+    font-size: clamp(3rem, 16vw, 7.5rem);
+  }
+
+  .totalTimeDisplayStopwatch {
+    font-size: clamp(1rem, 3.8vw, 1.6rem);
+  }
 }

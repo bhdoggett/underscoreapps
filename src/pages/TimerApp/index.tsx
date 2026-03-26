@@ -298,6 +298,8 @@ export default function TimerApp() {
     const best = splits.length > 1 ? Math.min(...splits) : null
     const worst = splits.length > 1 ? Math.max(...splits) : null
 
+    const displayWidthClass = timer.type === 'stopwatch' ? styles.timeDisplayStopwatch : styles.timeDisplayCountdown
+
     if (showFocusMode) {
       return (
         <div className={styles.focusOverlay}>
@@ -317,12 +319,12 @@ export default function TimerApp() {
             <div className={styles.presetLabel}>{label}</div>
             <button className={styles.closeBtn} onClick={dismiss} aria-label="dismiss">×</button>
           </div>
-          <div className={`${styles.timeDisplay}${isDone ? ` ${styles.done}` : ''}`}>
+          <div className={`${styles.timeDisplay} ${displayWidthClass}${isDone ? ` ${styles.done}` : ''}`}>
             {renderTimeCharacters(timeStr, styles)}
           </div>
           {laps.length > 0 && (
-            <div className={styles.totalTime}>
-              {formatTime(elapsed, true)}
+            <div className={`${styles.totalTime} ${styles.totalTimeDisplayStopwatch}`}>
+              {renderTimeCharacters(formatTime(elapsed, true), styles)}
             </div>
           )}
           {!isDone && (

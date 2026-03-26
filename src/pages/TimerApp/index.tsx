@@ -53,6 +53,17 @@ function getElapsed(state: TimerState): number {
   return state.accumulatedMs
 }
 
+function renderTimeCharacters(time: string, styles: Record<string, string>) {
+  return time.split('').map((char, i) => (
+    <span
+      key={`${char}-${i}`}
+      className={char === ':' || char === '.' ? styles.timeSep : styles.timeChar}
+    >
+      {char}
+    </span>
+  ))
+}
+
 export default function TimerApp() {
   const [timer, setTimer] = useState<TimerState>(idle)
   const [laps, setLaps] = useState<number[]>([])
@@ -290,8 +301,10 @@ export default function TimerApp() {
     if (showFocusMode) {
       return (
         <div className={styles.focusOverlay}>
-          <div className={`${styles.focusTime}${isDone ? ` ${styles.done}` : ''}`}>
-            {timeStr}
+          <div className={styles.focusCenter}>
+            <div className={`${styles.focusTime}${isDone ? ` ${styles.done}` : ''}`}>
+              {renderTimeCharacters(timeStr, styles)}
+            </div>
           </div>
         </div>
       )
@@ -305,7 +318,7 @@ export default function TimerApp() {
             <button className={styles.closeBtn} onClick={dismiss} aria-label="dismiss">×</button>
           </div>
           <div className={`${styles.timeDisplay}${isDone ? ` ${styles.done}` : ''}`}>
-            {timeStr}
+            {renderTimeCharacters(timeStr, styles)}
           </div>
           {laps.length > 0 && (
             <div className={styles.totalTime}>

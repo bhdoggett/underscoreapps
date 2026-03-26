@@ -48,3 +48,9 @@
     pointer-events: auto;
   }
 }
+
+@media (orientation: landscape) and (pointer: coarse) {
+  .timerTopBar {
+    display: none;
+  }
+}

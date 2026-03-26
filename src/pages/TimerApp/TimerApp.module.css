@@ -92,9 +92,18 @@
   inset: 0;
   background: var(--bg);
   z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 0 4vw;
+  overflow: visible;
+}
+
+.focusCenter {
+  width: 5.5ch;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .focusTime {
@@ -104,6 +113,28 @@
   line-height: 1;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  width: 5.5ch;
+  text-align: left;
+  transform: translateY(-0.16em);
+  white-space: nowrap;
+  overflow: visible;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.timeChar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1ch;
+}
+
+.timeSep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.5ch;
 }
 
 .labelRow {
@@ -134,7 +165,7 @@
 
 .timerInner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex-direction: column;
   width: min(90vw, 36rem);
   min-height: 0;
@@ -159,6 +190,10 @@
   color: var(--fg);
   margin-bottom: 1.5rem;
   font-variant-numeric: tabular-nums;
+  width: 7ch;
+  display: flex;
+  justify-content: center;
+  transform: translateY(-0.12em);
 }
 
 .timeDisplay.done {
@@ -173,6 +208,7 @@
 .controlRow {
   display: flex;
   gap: 0.6rem;
+  justify-content: center;
 }
 
 .controlBtn {
@@ -183,7 +219,7 @@
   font-size: 0.65rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  margin-top: 3.5rem;
+  margin-top: 1.25rem;
   padding: 0.45rem 0.85rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;

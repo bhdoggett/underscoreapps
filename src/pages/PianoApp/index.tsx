@@ -64,8 +64,11 @@ export default function PianoApp() {
   const [locked, setLocked] = useState(true)
   const [showNoteNames, setShowNoteNames] = useState(false)
   const [keyWidth, setKeyWidth] = useState(48)
+  const [volume, setVolume] = useState(0.8)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
+  const masterGainRef = useRef<GainNode | null>(null)
+  const volumeRef = useRef(0.8)
   const activeOscRef = useRef(new Map<number, OscEntry>())
 
   // Per-pointer tracking
@@ -93,10 +96,29 @@ export default function PianoApp() {
   // ── Audio engine ────────────────────────────────────────────────────────────
 
   function getCtx() {
-    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
+    if (!audioCtxRef.current) {
+      const ctx = new AudioContext()
+      audioCtxRef.current = ctx
+      const limiter = ctx.createDynamicsCompressor()
+      limiter.threshold.value = -3
+      limiter.knee.value = 0
+      limiter.ratio.value = 20
+      limiter.attack.value = 0.001
+      limiter.release.value = 0.1
+      limiter.connect(ctx.destination)
+      const master = ctx.createGain()
+      master.gain.value = volumeRef.current
+      master.connect(limiter)
+      masterGainRef.current = master
+    }
     audioCtxRef.current.resume()
     return audioCtxRef.current
   }
+
+  useEffect(() => {
+    volumeRef.current = volume
+    if (masterGainRef.current) masterGainRef.current.gain.value = volume
+  }, [volume])
 
   function noteOn(midi: number) {
     if (activeOscRef.current.has(midi)) return
@@ -108,7 +130,7 @@ export default function PianoApp() {
     gain.gain.setValueAtTime(0, now)
     gain.gain.linearRampToValueAtTime(0.7, now + 0.005)
     gain.gain.linearRampToValueAtTime(0.15, now + 0.12)
-    gain.connect(ctx.destination)
+    gain.connect(masterGainRef.current ?? ctx.destination)
 
     const osc1 = ctx.createOscillator()
     osc1.type = 'triangle'
@@ -265,7 +287,8 @@ export default function PianoApp() {
       }
     }
 
-    function onUp(e: PointerEvent) {
+    // Shared per-pointer release logic — used by pointerup, pointerleave, pointercancel
+    function releasePointer(e: PointerEvent) {
       activePointersRef.current.delete(e.pointerId)
       if (lockedRef.current) {
         const prevMidi = pointerNotesRef.current.get(e.pointerId)
@@ -283,24 +306,17 @@ export default function PianoApp() {
       }
     }
 
-    function onLeave() {
-      noteOffAll()
-      activePointersRef.current.clear()
-      pointerNotesRef.current.clear()
-      scrollPointerRef.current = null
-      tapNoteRef.current = null
-      isDraggingRef.current = false
-    }
-
     wrapper.addEventListener('pointerdown', onDown)
     wrapper.addEventListener('pointermove', onMove)
-    wrapper.addEventListener('pointerup', onUp)
-    wrapper.addEventListener('pointerleave', onLeave)
+    wrapper.addEventListener('pointerup', releasePointer)
+    wrapper.addEventListener('pointerleave', releasePointer)
+    wrapper.addEventListener('pointercancel', releasePointer)
     return () => {
       wrapper.removeEventListener('pointerdown', onDown)
       wrapper.removeEventListener('pointermove', onMove)
-      wrapper.removeEventListener('pointerup', onUp)
-      wrapper.removeEventListener('pointerleave', onLeave)
+      wrapper.removeEventListener('pointerup', releasePointer)
+      wrapper.removeEventListener('pointerleave', releasePointer)
+      wrapper.removeEventListener('pointercancel', releasePointer)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -389,7 +405,16 @@ export default function PianoApp() {
             <circle cx="17" cy="16" r="2" fill="none" stroke="currentColor" strokeWidth="1.6" className={showNoteNames ? styles.lockBodyFilled : ''} />
           </svg>
         </button>
-        <span className={styles.label}>key size</span>
+        <span className={styles.label}>vol</span>
+        <RangeSlider
+          min={0}
+          max={1}
+          step={0.01}
+          value={volume}
+          onChange={setVolume}
+          className={styles.slider}
+        />
+        <span className={styles.label}>size</span>
         <RangeSlider
           min={32}
           max={80}

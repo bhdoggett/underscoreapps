@@ -5,12 +5,13 @@ type Props = {
   max: number
   value: number
   onChange: (v: number) => void
+  step?: number
   vertical?: boolean
   size?: number
   className?: string
 }
 
-export default function RangeSlider({ min, max, value, onChange, vertical, size, className }: Props) {
+export default function RangeSlider({ min, max, value, onChange, step, vertical, size, className }: Props) {
   return (
     <input
       type="range"
@@ -18,6 +19,7 @@ export default function RangeSlider({ min, max, value, onChange, vertical, size,
       style={vertical && size ? { height: size } : undefined}
       min={min}
       max={max}
+      step={step}
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
     />

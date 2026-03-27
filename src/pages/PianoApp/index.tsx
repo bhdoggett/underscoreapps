@@ -174,10 +174,6 @@ export default function PianoApp() {
     osc2.stop(now + 0.16)
   }
 
-  function noteOffAll() {
-    for (const midi of Array.from(activeOscRef.current.keys())) noteOff(midi)
-  }
-
   useEffect(() => {
     function resumeCtx() {
       if (!audioUnlockedRef.current) {
@@ -375,17 +371,21 @@ export default function PianoApp() {
       }
     }
 
+    function onContextMenu(e: Event) { e.preventDefault() }
+
     wrapper.addEventListener('pointerdown', onDown)
     wrapper.addEventListener('pointermove', onMove)
     wrapper.addEventListener('pointerup', releasePointer)
     wrapper.addEventListener('pointerleave', releasePointer)
     wrapper.addEventListener('pointercancel', releasePointer)
+    wrapper.addEventListener('contextmenu', onContextMenu)
     return () => {
       wrapper.removeEventListener('pointerdown', onDown)
       wrapper.removeEventListener('pointermove', onMove)
       wrapper.removeEventListener('pointerup', releasePointer)
       wrapper.removeEventListener('pointerleave', releasePointer)
       wrapper.removeEventListener('pointercancel', releasePointer)
+      wrapper.removeEventListener('contextmenu', onContextMenu)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -434,7 +434,7 @@ export default function PianoApp() {
   const blackKeyWidth = Math.round(keyWidth * 0.65)
 
   return (
-    <div className={styles.app}>
+    <div className={styles.app} onContextMenu={e => e.preventDefault()}>
       <div className={styles.header}>
         <AppHeader
           title="piano"

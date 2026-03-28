@@ -4,6 +4,7 @@ import StatusMessage from '../../components/StatusMessage'
 import styles from './ListApp.module.css'
 
 const STORAGE_KEY = 'list_v1_items'
+const ZOOM_KEY = 'list_v1_zoom'
 
 type Item = { id: number; text: string }
 
@@ -24,6 +25,7 @@ export default function ListApp() {
   const [copied, setCopied] = useState(false)
   const [importedCount, setImportedCount] = useState(0)
   const [fileDragOver, setFileDragOver] = useState(false)
+  const [zoomed, setZoomed] = useState(() => localStorage.getItem(ZOOM_KEY) === '1')
   const listRef = useRef<HTMLUListElement>(null)
   const dragSrcId = useRef<number | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -33,6 +35,7 @@ export default function ListApp() {
   const fileDragCountRef = useRef(0)
 
   useEffect(() => { save(items) }, [items])
+  useEffect(() => { localStorage.setItem(ZOOM_KEY, zoomed ? '1' : '0') }, [zoomed])
 
   // Auto-resize textareas
   useLayoutEffect(() => {
@@ -294,7 +297,7 @@ export default function ListApp() {
   }
 
   return (
-    <div className={styles.app}>
+    <div className={`${styles.app}${zoomed ? ` ${styles.zoomed}` : ''}`}>
       <AppHeader
         title="list"
         meta={
@@ -317,6 +320,13 @@ export default function ListApp() {
                 <StatusMessage message="copied!" visible={copied} />
               </div>
             )}
+            <button
+              className={`${styles.zoomBtn}${zoomed ? ` ${styles.zoomActive}` : ''}`}
+              onClick={() => setZoomed(z => !z)}
+              aria-label={zoomed ? 'Zoom out' : 'Zoom in'}
+            >
+              {zoomed ? 'A−' : 'A+'}
+            </button>
           </div>
         }
         about={<>

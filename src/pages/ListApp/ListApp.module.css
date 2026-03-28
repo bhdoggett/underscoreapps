@@ -22,8 +22,14 @@
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .listItem {
@@ -106,7 +112,7 @@
 }
 
 .itemCheck:checked::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 3px;
   background: var(--fg);
@@ -137,7 +143,7 @@
   border-bottom: 1px solid var(--muted);
   outline: none;
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--fg);
   padding: 0;
   caret-color: var(--fg);
@@ -148,7 +154,7 @@
 }
 
 .itemText::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 50%;
@@ -241,7 +247,7 @@
   border: none;
   outline: none;
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--fg);
   padding: 0;
   caret-color: var(--fg);
@@ -267,7 +273,10 @@
   padding: 0.45rem 0.85rem;
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
 }
 
 .addBtn:hover,
@@ -275,4 +284,38 @@
   border-color: var(--fg);
   color: var(--bg);
   background: var(--fg);
+}
+
+/* ---- Zoom toggle ---- */
+
+.zoomBtn {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+.zoomBtn:hover {
+  color: var(--fg);
+}
+
+.zoomBtn.zoomActive {
+  color: var(--fg);
+}
+
+/* ---- Zoomed state ---- */
+
+.app.zoomed .itemText {
+  font-size: 1.15rem;
+}
+
+.app.zoomed .addInput,
+.app.zoomed .editInput {
+  font-size: 1.15rem;
 }

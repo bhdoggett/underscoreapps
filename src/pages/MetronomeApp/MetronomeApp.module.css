@@ -151,6 +151,27 @@
 }
 
 @media (orientation: landscape) and (pointer: coarse) {
+  .app {
+    max-width: 100%;
+    padding: 0.5rem 1.5rem 1rem;
+  }
+
+  .bpmInput {
+    font-size: clamp(5rem, 22vw, 12rem);
+  }
+
+  .timeSigNum {
+    font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+  }
+
+  .bpmRow {
+    margin-bottom: 1rem;
+  }
+
+  .timeSig {
+    margin-bottom: 1rem;
+  }
+
   .controlRow {
     margin-bottom: 0.5rem;
   }

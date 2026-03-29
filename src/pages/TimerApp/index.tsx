@@ -332,7 +332,7 @@ export default function TimerApp() {
     return (
       <div className={styles.overlay}>
         <div className={styles.timerInner}>
-          <div className={styles.labelRow}>
+          <div className={[styles.labelRow, label === 'stopwatch' ? styles.labelRowStopwatch : ''].filter(Boolean).join(' ')}>
             <div className={styles.presetLabel}>{label}</div>
             <button className={styles.closeBtn} onClick={dismiss} aria-label="dismiss">×</button>
           </div>

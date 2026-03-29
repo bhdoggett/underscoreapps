@@ -325,6 +325,19 @@
 }
 
 @media (orientation: landscape) and (pointer: coarse) {
+  .overlay {
+    top: 0;
+    padding-top: max(3vh, 0.75rem);
+  }
+
+  .lapsSection {
+    max-height: 35vh;
+  }
+
+  .labelRowStopwatch {
+    display: none;
+  }
+
   .timeDisplayStopwatch {
     font-size: clamp(3rem, 16vw, 7.5rem);
   }

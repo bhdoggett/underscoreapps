@@ -190,6 +190,31 @@ touch-action: none;  /* required */
 - Use pointer events (`onPointerDown`, `onPointerMove`, `onPointerUp`) rather than separate mouse and touch handlers
 - `touch-action: manipulation` on tap targets removes the 300ms delay
 
+### Landscape / focus mode on mobile
+
+When a touch device rotates to landscape, hide secondary chrome and expand the primary content to fill the screen. Use the media query `(orientation: landscape) and (pointer: coarse)` to target touch devices only — desktop browsers in a narrow window won't be affected.
+
+At minimum, remove the `max-width` constraint and tighten padding. Beyond that, think about what the user is actually doing in landscape: hide forms, settings, or input areas they don't need while focused on the core task. The goal is a distraction-free view where the content earns every pixel of the wider screen.
+
+```css
+/* ---- Focus mode (landscape on touch devices) ---- */
+@media (orientation: landscape) and (pointer: coarse) {
+  .app {
+    max-width: 100%;
+    padding: 1.5rem;
+  }
+
+  /* hide anything that isn't the primary content */
+  .inputForm {
+    display: none;
+  }
+}
+```
+
+Not every app needs this — only add it where landscape genuinely improves the experience (e.g., a list you're reading, a score you're watching, a timer counting down).
+
+---
+
 ### Number inputs — hide spinners
 
 ```css

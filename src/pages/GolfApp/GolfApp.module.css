@@ -588,4 +588,12 @@
     padding: 1.5rem;
   }
 
+  .leaderStrokes {
+    font-size: clamp(1.3rem, 8vw, 3rem);
+  }
+
+  .totStrokes {
+    font-size: clamp(0.85rem, 4vw, 1.5rem);
+  }
+
 }

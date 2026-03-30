@@ -157,11 +157,15 @@
   }
 
   .bpmInput {
-    font-size: clamp(5rem, 22vw, 12rem);
+    font-size: clamp(4rem, 15vw, 8rem);
   }
 
   .timeSigNum {
     font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+  }
+
+  .beatRow {
+    margin-bottom: 0.85rem;
   }
 
   .bpmRow {
@@ -173,7 +177,7 @@
   }
 
   .controlRow {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
   }
 
   .bpmLabel {

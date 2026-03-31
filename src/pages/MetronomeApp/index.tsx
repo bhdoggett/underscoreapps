@@ -3,10 +3,24 @@ import AppHeader from '../../components/AppHeader'
 import DragNumber from '../../components/DragNumber'
 import styles from './MetronomeApp.module.css'
 
+function useIsLandscapeMobile() {
+  const [is, setIs] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia('(orientation: landscape) and (pointer: coarse)')
+    const update = () => setIs(media.matches)
+    update()
+    media.addEventListener?.('change', update)
+    return () => media.removeEventListener?.('change', update)
+  }, [])
+  return is
+}
+
 const LOOKAHEAD_MS = 25
 const SCHEDULE_AHEAD_S = 0.1
 
 export default function MetronomeApp() {
+  const isLandscapeMobile = useIsLandscapeMobile()
   const [bpm, setBpm] = useState(120)
   const [beats, setBeats] = useState(4)
   const [running, setRunning] = useState(false)
@@ -141,19 +155,7 @@ export default function MetronomeApp() {
   // beat duration drives the fade animation speed
   const beatDuration = `${(60 / bpm).toFixed(3)}s`
 
-  return (
-    <div className={styles.app}>
-      <AppHeader
-        title="metronome"
-        about={<>
-          <p>Adjustable-tempo metronome with downbeat accent.</p>
-          <ul>
-            <li>Drag the BPM number up or down to change the tempo</li>
-            <li>Tap the beat square repeatedly to set tempo by feel</li>
-          </ul>
-        </>}
-      />
-
+  const inner = (
       <div className={styles.content}>
       <div className={styles.controlRow}>
         <button className={styles.controlBtn} onClick={running ? stopMetronome : startMetronome}>
@@ -214,6 +216,25 @@ export default function MetronomeApp() {
         <div className={styles.timeSigLabel}>beats</div>
       </div>
       </div>
+  )
+
+  if (isLandscapeMobile) {
+    return <div className={styles.focusOverlay}>{inner}</div>
+  }
+
+  return (
+    <div className={styles.app}>
+      <AppHeader
+        title="metronome"
+        about={<>
+          <p>Adjustable-tempo metronome with downbeat accent.</p>
+          <ul>
+            <li>Drag the BPM number up or down to change the tempo</li>
+            <li>Tap the beat square repeatedly to set tempo by feel</li>
+          </ul>
+        </>}
+      />
+      {inner}
     </div>
   )
 }

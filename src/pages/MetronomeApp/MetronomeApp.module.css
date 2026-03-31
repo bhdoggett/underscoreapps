@@ -110,7 +110,7 @@
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .timeSigRow {
@@ -147,7 +147,23 @@
 .controlRow {
   display: flex;
   gap: 0.6rem;
+  margin-top: 1.25rem;
   margin-bottom: 1.25rem;
+}
+
+.focusOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.focusOverlay .content {
+  width: auto;
 }
 
 @media (orientation: landscape) and (pointer: coarse) {

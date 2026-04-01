@@ -6,6 +6,7 @@ import CountApp from './pages/CountApp'
 import TextApp from './pages/TextApp'
 import ImageApp from './pages/ImageApp'
 import AudioApp from './pages/AudioApp'
+import AudioPlusApp from './pages/AudioPlusApp'
 import DecibelsApp from './pages/DecibelsApp'
 import LocationApp from './pages/LocationApp'
 import TimerApp from './pages/TimerApp'
@@ -205,6 +206,7 @@ const router = createBrowserRouter([
       { path: '/text', element: <TextApp /> },
       { path: '/image', element: <ImageApp /> },
       { path: '/audio', element: <AudioApp /> },
+      { path: '/audioplus', element: <AudioPlusApp /> },
       { path: '/decibels', element: <DecibelsApp /> },
       { path: '/location', element: <LocationApp /> },
       { path: '/timer', element: <TimerApp /> },

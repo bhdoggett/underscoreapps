@@ -14,6 +14,7 @@ const apps = [
   // media
   { path: "/image", name: "image" },
   { path: "/audio", name: "audio" },
+  { path: "/audioplus", name: "audio+" },
   { path: "/color", name: "color" },
   { path: "/draw", name: "draw" },
   // audio & music

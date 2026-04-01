@@ -15,6 +15,8 @@ export interface EngineTrack {
 export class AudioPlusEngine {
   private ctx: AudioContext | null = null
   private sources: Map<string, AudioBufferSourceNode> = new Map()
+  private gains: Map<string, GainNode> = new Map()
+  private panners: Map<string, StereoPannerNode> = new Map()
   private clickTimer: ReturnType<typeof setTimeout> | null = null
   private countInTimer: ReturnType<typeof setTimeout> | null = null
   private nextClickTime = 0
@@ -76,6 +78,9 @@ export class AudioPlusEngine {
       gain.connect(panner)
       panner.connect(masterGain)
 
+      this.gains.set(track.id, gain)
+      this.panners.set(track.id, panner)
+
       // Negative startOffset: track started before t=0, skip into buffer
       const when = startAt + Math.max(0, track.startOffset)
       const bufferOffset = track.trimStart + Math.max(0, -track.startOffset)
@@ -119,9 +124,21 @@ export class AudioPlusEngine {
     }
   }
 
+  setTrackVolume(id: string, volume: number) {
+    const gain = this.gains.get(id)
+    if (gain) gain.gain.value = volume
+  }
+
+  setTrackPan(id: string, pan: number) {
+    const panner = this.panners.get(id)
+    if (panner) panner.pan.value = pan
+  }
+
   stop() {
     this.sources.forEach(s => { try { s.stop() } catch { /* already stopped */ } })
     this.sources.clear()
+    this.gains.clear()
+    this.panners.clear()
     if (this.clickTimer !== null) { clearTimeout(this.clickTimer); this.clickTimer = null }
     if (this.countInTimer !== null) { clearTimeout(this.countInTimer); this.countInTimer = null }
     if (this.rafId !== null) { cancelAnimationFrame(this.rafId); this.rafId = null }
@@ -227,6 +244,9 @@ export class AudioPlusEngine {
       source.connect(gain)
       gain.connect(panner)
       panner.connect(masterGain)
+
+      this.gains.set(track.id, gain)
+      this.panners.set(track.id, panner)
 
       const when = tracksStartAt + Math.max(0, track.startOffset)
       const bufferOffset = track.trimStart + Math.max(0, -track.startOffset)

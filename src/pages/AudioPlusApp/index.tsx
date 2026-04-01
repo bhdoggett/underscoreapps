@@ -287,6 +287,14 @@ export default function AudioPlusApp() {
     }
   }, [state.bpm, state.pxPerSec, state.beatsPerMeasure, state.tracks.length])
 
+  // Sync volume/pan to live audio nodes whenever tracks change
+  useEffect(() => {
+    for (const track of state.tracks) {
+      engineRef.current.setTrackVolume(track.id, track.volume)
+      engineRef.current.setTrackPan(track.id, track.pan)
+    }
+  }, [state.tracks])
+
   // Spacebar always triggers transport (never activates focused buttons)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

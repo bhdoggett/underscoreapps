@@ -224,8 +224,6 @@
 
 .fader {
   flex: 1;
-  height: 0.5rem;
-  accent-color: var(--muted);
   min-width: 0;
 }
 

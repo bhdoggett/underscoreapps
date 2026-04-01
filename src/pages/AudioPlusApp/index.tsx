@@ -1,5 +1,6 @@
 import { useReducer, useRef, useEffect } from 'react'
 import AppHeader from '../../components/AppHeader'
+import RangeSlider from '../../components/RangeSlider'
 import { useIsLandscapeMobile } from '../../hooks/useIsLandscapeMobile'
 import { AudioPlusEngine } from './engine'
 import type { EngineTrack } from './engine'
@@ -205,13 +206,13 @@ function TrackRow({ track, buffer, pxPerSec, dispatch }: TrackRowProps) {
         />
         <div className={styles.sidebarControls}>
           <span className={styles.faderLabel}>vol</span>
-          <input type="range" className={styles.fader} min={0} max={1} step={0.01}
+          <RangeSlider className={styles.fader} min={0} max={1} step={0.01}
             value={track.volume}
-            onChange={e => dispatch({ type: 'SET_VOLUME', id: track.id, volume: Number(e.target.value) })} />
+            onChange={v => dispatch({ type: 'SET_VOLUME', id: track.id, volume: v })} />
           <span className={styles.faderLabel}>pan</span>
-          <input type="range" className={styles.fader} min={-1} max={1} step={0.01}
+          <RangeSlider className={styles.fader} min={-1} max={1} step={0.01}
             value={track.pan}
-            onChange={e => dispatch({ type: 'SET_PAN', id: track.id, pan: Number(e.target.value) })} />
+            onChange={v => dispatch({ type: 'SET_PAN', id: track.id, pan: v })} />
         </div>
         <div className={styles.sidebarActions}>
           <button

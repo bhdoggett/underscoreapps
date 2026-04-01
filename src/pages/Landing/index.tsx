@@ -26,6 +26,7 @@ const apps = [
   { path: "/location", name: "location" },
   { path: "/dice", name: "dice" },
   { path: "/golf", name: "golf" },
+  { path: "/darts", name: "darts" },
 ];
 
 function loadStarred(): string[] {

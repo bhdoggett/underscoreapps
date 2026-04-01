@@ -14,6 +14,7 @@ import MetronomeApp from './pages/MetronomeApp'
 import ColorApp from './pages/ColorApp'
 import DiceApp from './pages/DiceApp'
 import GolfApp from './pages/GolfApp'
+import DartsApp from './pages/DartsApp'
 import DrawApp from './pages/DrawApp'
 import PianoApp from './pages/PianoApp'
 import ErrorBoundary, { RouteErrorFallback } from './components/ErrorBoundary'
@@ -212,6 +213,7 @@ const router = createBrowserRouter([
       { path: '/color', element: <ColorApp /> },
       { path: '/dice', element: <DiceApp /> },
       { path: '/golf', element: <GolfApp /> },
+      { path: '/darts', element: <DartsApp /> },
       { path: '/draw', element: <DrawApp /> },
       { path: '/piano', element: <PianoApp /> },
       { path: '*', element: <NotFound /> },

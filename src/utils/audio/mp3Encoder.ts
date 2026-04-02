@@ -7,7 +7,7 @@ function toInt16(float32: Float32Array): Int16Array {
 }
 
 export async function encodeMP3(buffer: AudioBuffer): Promise<Blob> {
-  const { Mp3Encoder } = await import('lamejs')
+  const { Mp3Encoder } = await import('lamejs/lame.min.js')
   const numChannels = buffer.numberOfChannels
   const sampleRate = buffer.sampleRate
   const bitrate = 128

@@ -121,6 +121,7 @@
   font-size: 0.6rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  text-align: center;
   padding: 0.3rem 0.6rem;
   cursor: pointer;
   transition:
@@ -363,7 +364,7 @@
 .bottomBar {
   display: flex;
   gap: 0.75rem;
-  padding: 0.6rem 1.5rem;
+  padding: 0.6rem 0;
   border-top: 1px solid var(--rule);
   flex-shrink: 0;
   position: sticky;
@@ -504,6 +505,6 @@
   }
 
   .bottomBar {
-    padding: 0.35rem 1rem;
+    padding: 0.35rem 0;
   }
 }

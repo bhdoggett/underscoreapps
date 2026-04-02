@@ -1112,14 +1112,14 @@ export default function AudioPlusApp() {
             onClick={() => handleExport("wav")}
             disabled={state.tracks.length === 0}
           >
-            wav ↓
+            ↓wav
           </button>
           <button
             className={styles.topBtn}
             onClick={() => handleExport("mp3")}
             disabled={state.tracks.length === 0}
           >
-            mp3 ↓
+            ↓mp3
           </button>
         </div>
         <div className={styles.calibControls}>

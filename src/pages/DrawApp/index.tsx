@@ -4,6 +4,7 @@ import ActionButton from '../../components/ActionButton'
 import DragNumber from '../../components/DragNumber'
 import StatusMessage from '../../components/StatusMessage'
 import { useAbout } from '../../contexts/AboutContext'
+import { downloadCanvas } from '../../utils/downloadCanvas'
 import styles from './DrawApp.module.css'
 
 type HistoryEntry = { data: ImageData | null; blob: Blob | null; w: number; h: number }
@@ -619,12 +620,7 @@ export default function DrawApp() {
   }, [undo, redo])
 
   const download = (format: 'png' | 'jpeg' | 'webp') => {
-    const mime = `image/${format}`
-    const url = canvasRef.current!.toDataURL(mime)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `drawing.${format === 'jpeg' ? 'jpg' : format}`
-    a.click()
+    downloadCanvas(canvasRef.current!, format, 'drawing')
   }
 
   const showCopiedStatus = () => {

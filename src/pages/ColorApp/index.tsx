@@ -9,6 +9,7 @@ import AppHeader from "../../components/AppHeader";
 import DragNumber from "../../components/DragNumber";
 import RangeSlider from "../../components/RangeSlider";
 import { hexToRgb, rgbToHsl, rgbToCmyk, hslToRgb } from "./colorUtils";
+import { downloadCanvas } from "../../utils/downloadCanvas";
 import CssColorPicker from "./CssColorPicker";
 import styles from "./ColorApp.module.css";
 
@@ -635,6 +636,13 @@ function ColorWheelPicker({
   );
 }
 
+const EXPORT_PRESETS = [
+  { label: "desktop 1920×1080", w: 1920, h: 1080 },
+  { label: "mobile 1080×1920", w: 1080, h: 1920 },
+  { label: "square 1080×1080", w: 1080, h: 1080 },
+  { label: "4k 3840×2160", w: 3840, h: 2160 },
+]
+
 export default function ColorApp() {
   const [state, dispatch] = useReducer(reducer, undefined, () => {
     const hash = window.location.hash.slice(1);
@@ -664,6 +672,9 @@ export default function ColorApp() {
 
   const [fullscreen, setFullscreen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [activeExport, setActiveExport] = useState<"code" | "jpg" | "png" | "webp" | null>(null)
+  const [customW, setCustomW] = useState(1920)
+  const [customH, setCustomH] = useState(1080)
 
   // Keep URL hash in sync with gradient state (debounced to avoid replaceState rate limit)
   useEffect(() => {
@@ -1054,6 +1065,22 @@ export default function ColorApp() {
   const gradCss = gradientCss(state);
   const previewGroups =
     state.soloGroup !== null ? [state.groups[state.soloGroup]] : state.groups;
+
+  function handleExportClick(fmt: "code" | "jpg" | "png" | "webp") {
+    setActiveExport(fmt)
+    if (fmt === "code") {
+      navigator.clipboard.writeText(gradCss).then(() => {
+        dispatch({ type: "SET_GRADIENT_COPIED", value: true })
+        setTimeout(() => dispatch({ type: "SET_GRADIENT_COPIED", value: false }), 1200)
+      })
+    }
+  }
+
+  function handleDownload(fmt: "jpg" | "png" | "webp", w: number, h: number) {
+    const format = fmt === "jpg" ? "jpeg" : fmt
+    const canvas = renderGroupsToCanvas(previewGroups, w, h)
+    downloadCanvas(canvas, format as "png" | "jpeg" | "webp", "gradient")
+  }
 
   return (
     <div className={styles.app}>

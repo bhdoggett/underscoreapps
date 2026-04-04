@@ -732,12 +732,6 @@
   color: var(--muted);
 }
 
-.shareRow {
-  margin-top: 0.75rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
 /* ── CSS Named Color Picker ── */
 .cssPickerWrap {
   position: relative;

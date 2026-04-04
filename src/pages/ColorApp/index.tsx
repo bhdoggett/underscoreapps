@@ -1842,6 +1842,17 @@ export default function ColorApp() {
               {fmt === "code" && state.gradientCopied ? "copied" : fmt}
             </button>
           ))}
+          <button
+            className={styles.uploadLink}
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href).then(() => {
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 1200);
+              });
+            }}
+          >
+            {linkCopied ? "copied" : "copy link"}
+          </button>
         </div>
 
         {activeExport === "code" && (
@@ -1888,20 +1899,6 @@ export default function ColorApp() {
             </div>
           </div>
         )}
-
-        <div className={styles.shareRow}>
-          <button
-            className={styles.uploadLink}
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href).then(() => {
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 1200);
-              });
-            }}
-          >
-            {linkCopied ? "copied" : "copy link"}
-          </button>
-        </div>
       </div>
 
       {fullscreen && (

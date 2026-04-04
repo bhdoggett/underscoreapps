@@ -60,13 +60,14 @@ function detectPitch(fftBins: Float32Array, sampleRate: number): number | null {
   return parabolicPeak(fftBins, bestBin) * binHz;
 }
 
-function freqToNoteCents(freq: number): { note: string; cents: number } {
+function freqToNoteCents(freq: number): { note: string; cents: number; centsExact: number } {
   const midiNote = 69 + 12 * Math.log2(freq / 440);
   const nearest = Math.round(midiNote);
-  const cents = Math.round((midiNote - nearest) * 100);
+  const centsExact = (midiNote - nearest) * 100;
+  const cents = Math.round(centsExact);
   const octave = Math.floor(nearest / 12) - 1;
   const note = NOTE_NAMES[((nearest % 12) + 12) % 12] + octave;
-  return { note, cents };
+  return { note, cents, centsExact };
 }
 
 const midiToFreq = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
@@ -103,6 +104,7 @@ export default function TunerApp() {
   const displayedNoteRef = useRef<string | null>(null);
   const candidateNoteRef = useRef<string | null>(null);
   const candidateCountRef = useRef(0);
+  const needleRef = useRef<HTMLDivElement>(null);
 
   // Play mode refs
   const oscillatorRef = useRef<OscillatorNode | null>(null);
@@ -145,6 +147,7 @@ export default function TunerApp() {
           if (rawFreq === null) {
             smoothedFreqRef.current = null;
             candidateCountRef.current = 0;
+            if (needleRef.current) needleRef.current.style.left = "50%";
             setNote(null);
             setCents(null);
             setFreq(null);
@@ -164,9 +167,10 @@ export default function TunerApp() {
             }
           }
 
-          const { note: n, cents: c } = freqToNoteCents(
+          const { note: n, cents: c, centsExact: ce } = freqToNoteCents(
             smoothedFreqRef.current,
           );
+          if (needleRef.current) needleRef.current.style.left = `${50 + ce}%`;
 
           if (n === candidateNoteRef.current) {
             candidateCountRef.current++;
@@ -272,7 +276,6 @@ export default function TunerApp() {
   };
 
   const inTune = cents !== null && Math.abs(cents) <= 5;
-  const needlePercent = cents !== null ? 50 + cents : 50;
 
   const inner = (
     <div className={styles.content}>
@@ -406,13 +409,14 @@ export default function TunerApp() {
               <div className={styles.tuningBar}>
                 <div className={styles.tuningTrack}>
                   <div
+                    ref={needleRef}
                     className={[
                       styles.needle,
                       inTune ? styles.needleInTune : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    style={{ left: `${needlePercent}%` }}
+                    style={{ left: "50%" }}
                   />
                   <div className={styles.centerMark} />
                 </div>

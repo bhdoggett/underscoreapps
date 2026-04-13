@@ -238,7 +238,8 @@ function reducer(state: State, action: Action): State {
 
 async function download(blob: Blob, filename: string) {
   const file = new File([blob], filename, { type: blob.type });
-  if (navigator.canShare?.({ files: [file] })) {
+  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+  if (isTouchDevice && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: filename });
       return;
@@ -601,7 +602,9 @@ export default function AudioApp() {
   useEffect(() => {
     if (!hasFile) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code === "Space" && !(e.target instanceof HTMLInputElement)) {
+      const t = e.target as HTMLInputElement;
+      const isTextEntry = t.tagName === "INPUT" && t.type !== "range";
+      if (e.code === "Space" && !isTextEntry) {
         e.preventDefault();
         togglePlay();
       }
